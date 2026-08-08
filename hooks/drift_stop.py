@@ -17,6 +17,8 @@ missing/unparseable payload, and when the same session was already notified
 about the same subsystems.
 """
 
+from __future__ import annotations
+
 import json
 import os
 import sys
@@ -57,13 +59,13 @@ def session_touched_files(transcript_path: str, root: Path):
                     if not file_path:
                         continue
                     try:
-                        rel = str(Path(file_path).resolve().relative_to(root))
+                        # as_posix(): forward slashes on every OS, matching
+                        # the front-matter path convention
+                        rel = Path(file_path).resolve().relative_to(root).as_posix()
                     except ValueError:
                         continue  # outside the project
                     if rel.startswith(".claude/context/") and rel.endswith(".md"):
                         touched_docs.add(os.path.basename(rel))
-                    elif rel in ("CLAUDE.md", "AGENTS.md"):
-                        touched_docs.add(rel)
                     elif not rel.endswith(".md"):
                         code_files.add(rel)
     except (OSError, UnicodeDecodeError):

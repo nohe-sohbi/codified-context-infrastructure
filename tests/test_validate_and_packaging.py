@@ -58,6 +58,29 @@ def test_stale_generated_table_is_warning(fixture_project, tmp_path):
     assert "generated tables are stale" in out.stdout
 
 
+def test_print_index_works_without_mcp_sdk(repo_root, fixture_project):
+    """--print-index is the escape hatch for non-MCP consumers: it must run
+    under a python with no mcp SDK installed (stub decorator path)."""
+    code = (
+        "import builtins\n"
+        "real = builtins.__import__\n"
+        "def guard(name, *a, **k):\n"
+        "    if name == 'mcp' or name.startswith('mcp.'):\n"
+        "        raise ModuleNotFoundError(name)\n"
+        "    return real(name, *a, **k)\n"
+        "builtins.__import__ = guard\n"
+        "import sys, runpy\n"
+        # runpy does not add the script dir to sys.path the way `python x.py` does
+        f"sys.path.insert(0, {str(repo_root / 'mcp-server/context_retrieval_mcp')!r})\n"
+        f"sys.argv = ['server.py', '--print-index', '--project-root', {str(fixture_project)!r}]\n"
+        f"runpy.run_path({str(repo_root / 'mcp-server/context_retrieval_mcp/server.py')!r}, run_name='__main__')\n"
+    )
+    out = subprocess.run([sys.executable, "-c", code],
+                         capture_output=True, text=True, timeout=30)
+    assert out.returncode == 0, out.stderr
+    assert '"save-system"' in out.stdout
+
+
 def test_module_launch_modes(repo_root, fixture_project):
     env = {**os.environ, "PYTHONPATH": str(repo_root / "mcp-server")}
     out = subprocess.run(

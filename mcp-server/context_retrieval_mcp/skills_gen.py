@@ -19,11 +19,25 @@ disappeared. `check` reports what would change (CI mode).
 Stdlib-only (hooks/scripts import this without the mcp SDK).
 """
 
+from __future__ import annotations
+
+import re
 from pathlib import Path
 
 GENERATOR_MARKER = "generated-by: context-skills-gen/v1"
 SKILL_PREFIX = "ctx-"
 DESCRIPTION_CAP = 1536  # platform cap for description (+when_to_use)
+
+
+def _slug(key: str) -> str:
+    """Skill directory/name segment: lowercase, [a-z0-9-] only."""
+    return re.sub(r"-+", "-", re.sub(r"[^a-z0-9-]", "-", key.lower())).strip("-") or "doc"
+
+
+def _yaml_quote(value: str) -> str:
+    """Always double-quote generated YAML strings so colons, brackets and
+    leading symbols in descriptions can't produce invalid front-matter."""
+    return '"' + value.replace("\\", "\\\\").replace('"', '\\"') + '"'
 
 
 def _render_description(info: dict, warnings: list, key: str) -> str:
@@ -63,14 +77,14 @@ def _render_paths(files: list) -> list:
     return paths
 
 
-def render_skill(key: str, info: dict, warnings: list) -> str:
+def render_skill(key: str, info: dict, warnings: list, slug: str | None = None) -> str:
     description = _render_description(info, warnings, key)
     paths = _render_paths(info.get("files") or [])
 
     lines = [
         "---",
-        f"name: {SKILL_PREFIX}{key}",
-        f"description: {description}",
+        f"name: {SKILL_PREFIX}{slug or _slug(key)}",
+        f"description: {_yaml_quote(description)}",
     ]
     if paths:
         lines.append("paths:")
@@ -120,10 +134,15 @@ def generate_skills(index, prune: bool = False, check: bool = False) -> dict:
             )
             continue
 
-        skill_dir = skills_dir / f"{SKILL_PREFIX}{key}"
+        slug = _slug(key)
+        if slug != key:
+            result["warnings"].append(
+                f"{key}: subsystem key sanitized to '{slug}' for the skill name"
+            )
+        skill_dir = skills_dir / f"{SKILL_PREFIX}{slug}"
         skill_file = skill_dir / "SKILL.md"
         expected_dirs.add(skill_dir.name)
-        content = render_skill(key, info, result["warnings"])
+        content = render_skill(key, info, result["warnings"], slug=slug)
 
         if skill_file.exists():
             existing = skill_file.read_text(encoding="utf-8")

@@ -30,7 +30,14 @@ line-1 header `<!-- vN | last-verified: DATE -->`, and then with a warning):
 
 Agent front-matter: the four classic fields (name, description, tools,
 model) plus an optional `triggers: [...]` list used for task routing.
+
+Robustness contract: user-authored files are hostile input. A malformed,
+mis-encoded, or exotic doc must degrade to a warning — never crash the
+index (the MCP server builds it at startup and the hooks silently disable
+on exceptions).
 """
+
+from __future__ import annotations
 
 import os
 import re
@@ -53,16 +60,35 @@ def _parse_scalar(value: str):
     if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
         return value[1:-1]
     if value.lstrip("-").isdigit():
-        return int(value)
+        try:
+            return int(value)
+        except ValueError:  # unicode "digits" ('²'), '--3', … stay strings
+            return value
     if value.lower() in ("true", "false"):
         return value.lower() == "true"
     return value
 
 def _parse_inline_list(value: str) -> list:
+    """Split an inline list, respecting quoted items: [a, "hello, world", b]."""
     inner = value.strip()[1:-1]
-    if not inner.strip():
-        return []
-    return [_parse_scalar(item) for item in inner.split(",")]
+    items: list = []
+    buf: list = []
+    quote = None
+    for ch in inner:
+        if quote:
+            buf.append(ch)
+            if ch == quote:
+                quote = None
+        elif ch in "\"'":
+            quote = ch
+            buf.append(ch)
+        elif ch == ",":
+            items.append("".join(buf))
+            buf = []
+        else:
+            buf.append(ch)
+    items.append("".join(buf))
+    return [_parse_scalar(item) for item in items if item.strip()]
 
 
 def parse_front_matter(text: str):
@@ -76,6 +102,8 @@ def parse_front_matter(text: str):
     yields {"version": N, "last-verified": DATE, "_legacy_header": True}.
     """
     warnings = []
+    # Hostile-input normalization: strip a UTF-8 BOM, normalize CRLF
+    text = text.lstrip("\ufeff").replace("\r\n", "\n")
 
     legacy = _LEGACY_HEADER.match(text)
     if legacy:
@@ -87,7 +115,8 @@ def parse_front_matter(text: str):
         body = text[legacy.end():].lstrip("\n")
         return meta, body, warnings
 
-    if not text.startswith("---"):
+    # "---\n" exactly: a "----" horizontal rule is not a front-matter fence
+    if not text.startswith("---\n"):
         return {}, text, warnings
 
     end = text.find("\n---", 3)
@@ -164,12 +193,20 @@ def load_subsystems(context_dir: Path):
 
     for doc in sorted(context_dir.glob("*.md")):
         try:
-            text = doc.read_text(encoding="utf-8")
-        except OSError as exc:
-            warnings.append(f"{doc.name}: unreadable ({exc})")
+            text = doc.read_text(encoding="utf-8-sig")
+        except (OSError, UnicodeDecodeError) as exc:
+            warnings.append(
+                f"{doc.name}: unreadable ({exc.__class__.__name__}) — skipped"
+            )
             continue
 
-        meta, body, doc_warnings = parse_front_matter(text)
+        try:
+            meta, body, doc_warnings = parse_front_matter(text)
+        except Exception as exc:  # hostile input must never kill the index
+            warnings.append(
+                f"{doc.name}: unparseable front-matter ({exc.__class__.__name__}) — skipped"
+            )
+            continue
         warnings.extend(f"{doc.name}: {w}" for w in doc_warnings)
 
         if not meta:
@@ -212,14 +249,22 @@ def load_agents(agents_dir: Path):
         return agents, warnings
 
     for spec in sorted(agents_dir.rglob("*.md")):
+        rel = spec.relative_to(agents_dir).as_posix()
         try:
-            text = spec.read_text(encoding="utf-8")
-        except OSError as exc:
-            warnings.append(f"{spec.name}: unreadable ({exc})")
+            text = spec.read_text(encoding="utf-8-sig")
+        except (OSError, UnicodeDecodeError) as exc:
+            warnings.append(
+                f"agents/{rel}: unreadable ({exc.__class__.__name__}) — skipped"
+            )
             continue
 
-        meta, _body, doc_warnings = parse_front_matter(text)
-        rel = spec.relative_to(agents_dir)
+        try:
+            meta, _body, doc_warnings = parse_front_matter(text)
+        except Exception as exc:  # hostile input must never kill the index
+            warnings.append(
+                f"agents/{rel}: unparseable front-matter ({exc.__class__.__name__}) — skipped"
+            )
+            continue
         warnings.extend(f"agents/{rel}: {w}" for w in doc_warnings)
 
         name = str(meta.get("name") or "")
@@ -281,8 +326,31 @@ class Index:
         self.project_root = Path(project_root)
         self.context_dir = self.project_root / ".claude" / "context"
         self.agents_dir = self.project_root / ".claude" / "agents"
-        self._extra_subsystems = extra_subsystems or {}
-        self._extra_agents = extra_agents or {}
+        # Normalize v1-compat extras so a missing key never KeyErrors a tool
+        self._extra_subsystems = {
+            key: {
+                "name": str(info.get("name", key)),
+                "description": str(info.get("description", "")),
+                "keywords": _as_str_list(info.get("keywords")),
+                "files": _as_str_list(info.get("files")),
+                "priority": str(info.get("priority", "medium")),
+                "related": _as_str_list(info.get("related")),
+                "doc": str(info.get("doc", "")),
+                "version": info.get("version"),
+                "last_verified": info.get("last_verified"),
+            }
+            for key, info in (extra_subsystems or {}).items()
+        }
+        self._extra_agents = {
+            key: {
+                "name": str(info.get("name", key)),
+                "description": str(info.get("description", "")),
+                "model": str(info.get("model", "inherit")),
+                "triggers": _as_str_list(info.get("triggers")),
+                "path": str(info.get("path", "")),
+            }
+            for key, info in (extra_agents or {}).items()
+        }
         self.subsystems: dict = {}
         self.agents: dict = {}
         self.warnings: list = []

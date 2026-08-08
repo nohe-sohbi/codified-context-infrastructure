@@ -10,6 +10,8 @@ session hooks can import it under a bare python3):
   vocabulary outweighs generic vocabulary shared by many entries.
 """
 
+from __future__ import annotations
+
 import re
 from typing import Iterable
 

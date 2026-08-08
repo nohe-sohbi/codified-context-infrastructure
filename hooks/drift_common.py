@@ -4,8 +4,10 @@ Layout contract: this file lives in `hooks/` next to a sibling
 `mcp-server/context_retrieval_mcp/` package — true both in the plugin
 (`${CLAUDE_PLUGIN_ROOT}/hooks`) and when both directories are copied into a
 project. The hooks import the shared index through that relative path, so
-the SUBSYSTEMS mapping they use is exactly the one the MCP server serves.
+the subsystem index they use is exactly the one the MCP server serves.
 """
+
+from __future__ import annotations
 
 import json
 import os
@@ -63,11 +65,14 @@ def subsystem_patterns(root: Path) -> list:
 
 
 def match_code_file(path: str, code_patterns: list) -> bool:
+    """Front-matter `files:` entries are project-root-relative by contract:
+    exact match for files, prefix match for `dir/` entries. (No suffix
+    matching — `vendor/src/x.py` must not satisfy pattern `src/x.py`.)"""
     for pattern in code_patterns:
         if pattern.endswith("/"):
             if path.startswith(pattern):
                 return True
-        elif path == pattern or path.endswith("/" + pattern):
+        elif path == pattern:
             return True
     return False
 
@@ -113,6 +118,8 @@ def save_state(root: Path, state: dict) -> None:
     try:
         path = root / STATE_FILE
         path.parent.mkdir(parents=True, exist_ok=True)
-        path.write_text(json.dumps(state))
+        tmp = path.with_suffix(".json.tmp")
+        tmp.write_text(json.dumps(state))
+        os.replace(tmp, path)  # atomic: SessionStart/Stop may race
     except OSError:
         pass

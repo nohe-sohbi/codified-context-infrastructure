@@ -2,8 +2,12 @@ name: CI
 
 on:
   push:
-    branches: ["**"]
+    branches: ["main", "claude/**"]
   pull_request:
+
+concurrency:
+  group: ci-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   test:
@@ -11,7 +15,14 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.10", "3.12"]
+        include:
+          - python-version: "3.10"
+            mcp-spec: ""
+          - python-version: "3.12"
+            mcp-spec: ""
+          - python-version: "3.12"
+            # Exercise the MCP SDK v1 import branch
+            mcp-spec: "mcp>=1,<2"
     steps:
       - uses: actions/checkout@v4
 
@@ -23,6 +34,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -e ./mcp-server pytest
+          if [ -n "${{ matrix.mcp-spec }}" ]; then pip install "${{ matrix.mcp-spec }}"; fi
 
       - name: Syntax check (hooks/scripts must run under bare python3)
         run: python -m compileall -q mcp-server hooks scripts data
@@ -35,8 +47,33 @@ jobs:
           context-retrieval-mcp --version
           context-retrieval-mcp --print-index --project-root tests/fixtures/demo-project > /dev/null
 
+      - name: CLI works without the mcp SDK
+        run: |
+          python -m venv /tmp/nomcp
+          /tmp/nomcp/bin/python mcp-server/context_retrieval_mcp/server.py --print-index --project-root tests/fixtures/demo-project > /dev/null
+
       - name: Validate fixture architecture
         run: python scripts/validate_architecture.py --project-root tests/fixtures/demo-project
 
       - name: Generated artifacts are fresh (fixture)
         run: python scripts/generate_reference_table.py --project-root tests/fixtures/demo-project --check
+
+  test-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install package and test deps
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e ./mcp-server pytest
+
+      - name: Unit tests
+        run: pytest tests/ -q
+
+      - name: Validate fixture architecture
+        run: python scripts/validate_architecture.py --project-root tests/fixtures/demo-project

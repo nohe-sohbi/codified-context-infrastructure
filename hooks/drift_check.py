@@ -24,6 +24,8 @@ Usage:
 Output: empty = no warnings (silent). Never blocks session start.
 """
 
+from __future__ import annotations
+
 import json
 import os
 import subprocess
@@ -35,7 +37,10 @@ from drift_common import (
     project_root, subsystem_patterns, flag_drift, load_state, save_state,
 )
 
-MAX_COMMITS = int(os.environ.get("DRIFT_MAX_COMMITS", "10"))
+try:
+    MAX_COMMITS = int(os.environ.get("DRIFT_MAX_COMMITS", "10"))
+except ValueError:  # garbage env var must not break session start
+    MAX_COMMITS = 10
 MAX_SESSIONS = 3
 MAX_LINES_PER_SESSION = 5000
 DEBUG_SCORE_THRESHOLD = 50
@@ -89,8 +94,6 @@ def recent_commit_files(root: Path):
             continue
         if f.startswith(".claude/context/") and f.endswith(".md"):
             touched_docs.add(os.path.basename(f))
-        elif f in ("CLAUDE.md", "AGENTS.md"):
-            touched_docs.add(f)
         elif not f.endswith(".md"):
             code_files.add(f)
     return code_files, touched_docs
@@ -104,10 +107,15 @@ def find_project_log_dirs(root: Path) -> list:
     claude_projects = Path.home() / ".claude" / "projects"
     if not claude_projects.is_dir():
         return []
-    needle = os.environ.get(
-        "DRIFT_PROJECT_NAME", str(root).replace("/", "-").replace("\\", "-")
-    )
-    return [d for d in claude_projects.iterdir() if d.is_dir() and needle in d.name]
+    override = os.environ.get("DRIFT_PROJECT_NAME")
+    if override:  # user-supplied needle: substring match
+        return [d for d in claude_projects.iterdir()
+                if d.is_dir() and override in d.name]
+    # Derived from the project path: exact match only, so /home/u/proj never
+    # picks up /home/u/proj-other's session logs
+    derived = str(root).replace("/", "-").replace("\\", "-")
+    return [d for d in claude_projects.iterdir()
+            if d.is_dir() and d.name == derived]
 
 
 def analyze_last_sessions(log_dirs: list) -> dict | None:

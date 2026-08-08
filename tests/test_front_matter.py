@@ -77,3 +77,38 @@ def test_empty_inline_list_and_booleans():
     meta, _, _ = parse_front_matter("---\nrelated: []\nflag: true\n---\nbody")
     assert meta["related"] == []
     assert meta["flag"] is True
+
+
+def test_bom_and_crlf_normalized():
+    text = "﻿---\r\nsubsystem: bom-doc\r\nkeywords: [a, b]\r\n---\r\n# T\r\nBody.\r\n"
+    meta, body, warnings = parse_front_matter(text)
+    assert meta["subsystem"] == "bom-doc"
+    assert meta["keywords"] == ["a", "b"]
+    assert body.startswith("# T")
+    assert warnings == []
+
+
+def test_unicode_digits_never_crash():
+    # '²'.isdigit() is True but int('²') raises; '--3' likewise
+    meta, _, _ = parse_front_matter("---\nversion: ²\nother: --3\n---\nbody")
+    assert meta["version"] == "²"
+    assert meta["other"] == "--3"
+
+
+def test_quoted_item_with_comma_survives():
+    meta, _, warnings = parse_front_matter(
+        '---\nkeywords: [a, "hello, world", b, \'x, y\']\n---\nbody'
+    )
+    assert meta["keywords"] == ["a", "hello, world", "b", "x, y"]
+    assert warnings == []
+
+
+def test_double_empty_items_dropped():
+    meta, _, _ = parse_front_matter("---\nkeywords: [a,,b, ]\n---\nbody")
+    assert meta["keywords"] == ["a", "b"]
+
+
+def test_horizontal_rule_start_is_not_a_fence():
+    meta, body, warnings = parse_front_matter("----\n# Doc\nBody.\n")
+    assert meta == {}
+    assert warnings == []  # no bogus "never closed" warning

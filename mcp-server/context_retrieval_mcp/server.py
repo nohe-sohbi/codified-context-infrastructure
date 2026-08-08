@@ -35,8 +35,26 @@ from pathlib import Path
 
 try:  # MCP SDK v2 (mcp>=2.0): same decorator surface, new location/name
     from mcp.server.mcpserver import MCPServer as FastMCP
-except ImportError:  # MCP SDK v1
-    from mcp.server.fastmcp import FastMCP
+except ImportError:
+    try:  # MCP SDK v1
+        from mcp.server.fastmcp import FastMCP
+    except ImportError:
+        # SDK absent: keep the CLI modes (--print-index, --version) alive —
+        # they only need the stdlib index. Serving requires the real SDK.
+        class FastMCP:  # type: ignore[no-redef]
+            def __init__(self, _name):
+                pass
+
+            def tool(self, *_a, **_k):
+                return lambda fn: fn
+
+            def resource(self, *_a, **_k):
+                return lambda fn: fn
+
+            def run(self, *_a, **_k):
+                raise SystemExit(
+                    "The mcp SDK is required to serve: pip install mcp"
+                )
 
 try:  # package mode (pip install / python -m)
     from .matching import tokenize, term_counts, score_terms, description_bonus

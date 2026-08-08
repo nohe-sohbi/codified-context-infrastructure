@@ -73,6 +73,27 @@ def test_prune_removes_orphans_only_with_marker(fixture_project, tmp_path):
     assert manual.exists()
 
 
+def test_yaml_escaping_and_key_sanitization(fixture_project, tmp_path):
+    project = _project(fixture_project, tmp_path)
+    doc = project / ".claude/context/tricky.md"
+    doc.write_text(
+        '---\nsubsystem: "Tricky Key"\n'
+        'description: "Sync: deterministic [RNG] with \\"quotes\\""\n'
+        "keywords: [tricky]\n---\n# Tricky\n"
+    )
+    index = Index(project)
+    result = generate_skills(index)
+    skill_file = project / ".claude/skills/ctx-tricky-key/SKILL.md"
+    assert skill_file.exists(), result
+    skill = skill_file.read_text()
+    desc_line = next(l for l in skill.splitlines() if l.startswith("description: "))
+    # Always double-quoted, inner quotes escaped -> valid YAML despite ':' and '['
+    assert desc_line.startswith('description: "')
+    assert desc_line.endswith('"')
+    assert "name: ctx-tricky-key" in skill
+    assert any("sanitized" in w for w in result["warnings"])
+
+
 def test_description_cap_truncates_keywords(fixture_project, tmp_path):
     project = _project(fixture_project, tmp_path)
     doc = project / ".claude/context/bigkw.md"

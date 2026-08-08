@@ -56,6 +56,32 @@ def test_mtime_lazy_reload(fixture_project, tmp_path):
     assert "hotload" not in index.subsystems
 
 
+def test_hostile_docs_warn_but_never_crash(fixture_project, tmp_path):
+    project = tmp_path / "proj"
+    shutil.copytree(fixture_project, project)
+    ctx = project / ".claude" / "context"
+    # Non-UTF8 doc
+    (ctx / "latin1.md").write_bytes(b"---\nsubsystem: latin\n---\n# Caf\xe9\n")
+    # Unicode "digit" scalar that would crash int()
+    (ctx / "unicode.md").write_text(
+        "---\nsubsystem: unicode-doc\ndescription: ok\nversion: ²\n---\n# U\n"
+    )
+    index = Index(project)  # must not raise
+    assert "unicode-doc" in index.subsystems
+    joined = "\n".join(index.warnings)
+    assert "latin1.md" in joined and "unreadable" in joined
+
+
+def test_extra_dicts_normalized_missing_keys(fixture_project):
+    # v1-compat extras with missing keys must not KeyError any consumer
+    index = Index(fixture_project, extra_subsystems={"bare": {}},
+                  extra_agents={"bare-agent": {"description": "only desc"}})
+    sub = index.subsystems["bare"]
+    assert sub["keywords"] == [] and sub["files"] == [] and sub["priority"] == "medium"
+    agent = index.agents["bare-agent"]
+    assert agent["triggers"] == [] and agent["model"] == "inherit"
+
+
 def test_extra_dicts_sit_under_front_matter(fixture_project):
     extra = {
         "save-system": {"name": "OVERRIDDEN", "description": "", "keywords": [],
