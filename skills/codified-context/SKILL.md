@@ -16,7 +16,7 @@ Three tiers, all indexed from front-matter (single source of truth):
 
 | Tier | Artifact | Loading |
 |------|----------|---------|
-| 1 — Constitution | `AGENTS.md` (canonical) + `CLAUDE.md` shim (`@AGENTS.md`) | Every session |
+| 1 — Constitution | The project's instructions file — `CLAUDE.md` when every harness in use reads it; `AGENTS.md` canonical + `CLAUDE.md` shim only when the toolset needs it | Every session |
 | 2 — Specialized agents | `.claude/agents/{name}.md` (front-matter incl. `triggers:`) | Routed per task |
 | 3 — Knowledge base | `.claude/context/{topic}.md` (front-matter: subsystem, keywords, files, priority) | On demand via MCP tools + generated `ctx-*` skills |
 

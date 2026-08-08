@@ -21,7 +21,7 @@ Knowledge is split by loading frequency — a memory hierarchy, like your CPU ha
 
 | Tier | Artifact | Loading |
 |------|----------|---------|
-| **1 — Constitution** | `AGENTS.md` (canonical, read natively by ~30 harnesses) + `CLAUDE.md` shim (`@AGENTS.md`) | Every session |
+| **1 — Constitution** | Your instructions file — `CLAUDE.md` if all your harnesses read it (Claude Code and pi do), or `AGENTS.md` canonical + `CLAUDE.md` shim when your toolset needs the vendor-neutral standard | Every session |
 | **2 — Specialist agents** | `.claude/agents/{name}.md` — domain experts with embedded project knowledge, routed by `triggers:` | Per task |
 | **3 — Knowledge base** | `.claude/context/{topic}.md` — one deep spec per subsystem, served via MCP retrieval + auto-loading skills | On demand |
 | **Drift guardian** | `hooks/drift_*.py` — compares code changes against specs, asks for updates while context is hot | Every session |
