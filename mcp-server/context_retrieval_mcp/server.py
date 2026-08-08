@@ -45,7 +45,7 @@ except ImportError:  # direct-run mode (python3 server.py)
     from matching import tokenize, term_counts, score_terms, description_bonus
     from context_index import load_index
 
-VERSION = "0.2.0"
+VERSION = "2.0.0"
 
 # Suppress verbose MCP logging
 logging.getLogger("mcp").setLevel(logging.ERROR)
