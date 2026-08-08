@@ -1,7 +1,7 @@
 {
   "name": "codified-context",
   "description": "Codified context infrastructure for AI coding agents: factory agents (constitution, context docs, specialized agents), index-driven MCP retrieval over front-matter, path-triggered context skills, and doc↔code drift detection hooks. Companion to arXiv:2602.20478.",
-  "version": "2.1.0",
+  "version": "2.2.0",
   "author": {
     "name": "codified-context-infrastructure contributors",
     "url": "https://github.com/nohe-sohbi/codified-context-infrastructure"
