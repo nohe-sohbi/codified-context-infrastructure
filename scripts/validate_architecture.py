@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Validate the codified context infrastructure of a project.
 
-Cross-platform replacement for the case-study's validate-architecture.sh,
-built on the same shared index the MCP server and hooks use. Checks:
+Cross-platform replacement for `case-study/scripts/validate-architecture.sh`
+(frozen — see case-study/FROZEN.md), built on the same shared index the MCP
+server and hooks use. Layout contract: `scripts/` must stay a sibling of
+`mcp-server/`. Checks:
 
   ERRORS (exit 1):
     - a `files:` entry pointing to a nonexistent exact file

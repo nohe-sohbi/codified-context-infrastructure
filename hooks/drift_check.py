@@ -6,7 +6,8 @@ subsystem's code changed without its context doc, a prioritized warning is
 printed to stdout (which Claude Code injects into session context). Also
 flags debugging-heavy previous sessions as a codify-the-lessons signal.
 
-Replaces the case-study script that parsed a SUBSYSTEMS dict out of
+Replaces the case-study script (`case-study/scripts/context-drift-check.py`,
+frozen — see case-study/FROZEN.md) that parsed a SUBSYSTEMS dict out of
 server.py via AST and hardcoded the project's paths — here everything comes
 from `.claude/context/*.md` front-matter (`files:`, `priority:`).
 

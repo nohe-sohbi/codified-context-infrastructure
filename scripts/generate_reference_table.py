@@ -15,7 +15,7 @@ Usage:
     python3 scripts/generate_reference_table.py [--project-root DIR] [--target FILE] [--check]
 
 --check exits 1 if the tables are stale instead of rewriting them (CI mode).
-Stdlib-only.
+Stdlib-only. Layout contract: `scripts/` must stay a sibling of `mcp-server/`.
 """
 
 import argparse

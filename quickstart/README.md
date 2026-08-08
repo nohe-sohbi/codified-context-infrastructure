@@ -17,7 +17,7 @@ The plugin bundles:
 |-----------|--------------|
 | 3 factory agents | `constitution-factory`, `context-factory`, `agent-factory` — generate your project's artifacts (each asks 3 questions) |
 | `codified-context` skill | The front door: bootstrap sequence, maintenance workflow, drift-response protocol |
-| `context-retrieval` MCP server | Index-driven Tier-3 retrieval over your project's front-matter (no pip install needed; requires `python3` + `pip install mcp`) |
+| `context-retrieval` MCP server | Index-driven Tier-3 retrieval over your project's front-matter (no `pip install -e .` of the server needed — the only prerequisite is the `mcp` SDK: `pip install mcp`) |
 | Drift hooks | SessionStart check (recent commits vs specs) + Stop advisor (this session's edits vs specs) |
 
 Then, in your project:
@@ -33,9 +33,10 @@ Verify the wiring with the `get_index_status()` MCP tool — it must report **yo
    your-project/
    ├── .claude/agents/           # copy the repo's agents/*.md here
    ├── hooks/                    # copy the repo's hooks/ (drift detection)
+   ├── scripts/                  # copy the repo's scripts/ (generators + validator)
    └── mcp-server/               # copy the repo's mcp-server/
    ```
-   Keep `hooks/` and `mcp-server/` as siblings — the hooks import the shared index through that relative layout. (You can place both under `.claude/` instead; keep them siblings.)
+   Keep `hooks/`, `scripts/` and `mcp-server/` as siblings — hooks and scripts import the shared index through that relative layout. (You can place the trio under `.claude/` instead; keep them siblings and adapt the hook paths in step 3 accordingly.)
 
 2. Install the MCP server: `cd mcp-server && pip install -e .`, then create `.mcp.json` at your project root:
    ```json

@@ -25,8 +25,8 @@ analyze_impact.py           Correlate sessions with git commits
 |--------|-------|---------|
 | `extract_prompts.py` | ~706 | Core extraction: parse JSONL, classify prompts into 25 categories, compute token costs, detect agent spawns |
 | `reconstruct_sessions.py` | ~811 | Reconstruct lost gap period (Dec 15 -- Jan 15) from git commits, todo files, and shell snapshots |
-| `analyze_impact.py` | ~300 | Correlate prompt timestamps with git commits to identify high-impact interactions |
-| `extract_session_aggregates.py` | ~140 | Aggregate per-prompt data into per-session statistics with anonymized session IDs |
+| `analyze_impact.py` | 448 | Correlate prompt timestamps with git commits to identify high-impact interactions |
+| `extract_session_aggregates.py` | 189 | Aggregate per-prompt data into per-session statistics with anonymized session IDs |
 
 ### Running the Scripts
 

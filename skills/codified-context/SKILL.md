@@ -31,7 +31,7 @@ front-matter block IS the registration.
 3. When failure patterns repeat in a domain, invoke `agent-factory` — creates `.claude/agents/{name}.md` with routing `triggers:`.
 4. Generate the path-triggered context skills:
    `python3 <plugin-root>/scripts/generate_skills.py --project-root .`
-5. Verify the index: call the `get_index_status()` MCP tool — it must report YOUR project root and zero warnings.
+5. Verify the index: call the `get_index_status()` MCP tool — it must report YOUR project root and list your docs/agents (legacy-header docs warn by design).
 
 ## Maintenance
 

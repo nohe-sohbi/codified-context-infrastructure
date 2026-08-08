@@ -63,15 +63,18 @@ pip install -e .
 
 ### Running
 
-Three equivalent launch modes:
+Three launch modes:
 
 ```bash
 context-retrieval-mcp                       # console script (after pip install)
 python -m context_retrieval_mcp             # module mode (after pip install)
-python3 context_retrieval_mcp/server.py     # direct run (no install; only `pip install mcp` needed)
+python3 context_retrieval_mcp/server.py     # direct run from mcp-server/, or by absolute
+                                            # path as the plugin does (only `pip install mcp` needed)
 ```
 
-Smoke test / JSON escape hatch for non-MCP consumers (pi.dev tooling, CI, debugging):
+CLI flags: `--print-index` dumps the resolved index as JSON (works even
+without the `mcp` SDK installed — the escape hatch for pi.dev tooling, CI,
+debugging), `--project-root DIR` overrides root resolution, `--version`.
 
 ```bash
 context-retrieval-mcp --print-index [--project-root DIR]
@@ -119,7 +122,7 @@ Or, with no pip install (the way the codified-context plugin runs it):
 
 ## Migrating From the v1 Template
 
-If you adopted the earlier dict-based template: move each `SUBSYSTEMS` entry into the front-matter of its context doc (`keywords`, `files`, description) and each `AGENTS` entry into its agent spec's front-matter (`triggers:`). As a stopgap, the `EXTRA_SUBSYSTEMS`/`EXTRA_AGENTS` dicts at the top of `server.py` are merged *under* the front-matter index (front-matter wins on collision), so you can migrate incrementally.
+If you adopted the earlier dict-based template (shipped as `quickstart/mcp-server/` through v1.x, removed in v2): move each `SUBSYSTEMS` entry into the front-matter of its context doc (`keywords`, `files`, description) and each `AGENTS` entry into its agent spec's front-matter (`triggers:`). As a stopgap, the `EXTRA_SUBSYSTEMS`/`EXTRA_AGENTS` dicts at the top of `server.py` are merged *under* the front-matter index (front-matter wins on collision), so you can migrate incrementally.
 
 The original dict-based case-study server is preserved verbatim in `case-study/mcp-server/` (see `case-study/FROZEN.md`).
 

@@ -53,7 +53,7 @@ Au quotidien, le développeur **ne manipule presque jamais l'infrastructure dire
 4. En fin de tâche, si l'architecture a changé, la checklist de la constitution demande de mettre à jour la spec concernée (~5 min).
 5. Au démarrage de session suivant, un hook (`context-drift-check.py`) compare les commits récents aux specs : si du code réseau a changé sans que `network-*.md` bouge, un avertissement est injecté dans le contexte.
 
-Pour **démarrer sur votre propre projet**, le dépôt fournit des « factory agents » (`quickstart/`) : on les copie dans `.claude/agents/`, on demande à l'assistant de lire le README, et chaque factory pose 3 questions avant de générer respectivement la constitution, les agents, et les docs de contexte. La règle d'or du papier : **ne rien concevoir à l'avance** — on crée un agent ou une spec quand un pattern d'échec se répète (« si tu l'as expliqué deux fois, écris-le »).
+Pour **démarrer sur votre propre projet**, le dépôt fournit des « factory agents » (`agents/`, installables via le plugin Claude Code ou copiables dans `.claude/agents/`) : chaque factory pose 3 questions avant de générer respectivement la constitution, les agents, et les docs de contexte. La règle d'or du papier : **ne rien concevoir à l'avance** — on crée un agent ou une spec quand un pattern d'échec se répète (« si tu l'as expliqué deux fois, écris-le »).
 
 ### 1.5 Est-ce pertinent, et pour qui ?
 
@@ -97,7 +97,7 @@ Le papier a construit à la main, en janvier-février 2026, des mécanismes que 
 - **Règles à portée de chemin** (`.claude/rules/` avec front-matter `paths:`) : la constitution monolithique peut être décomposée en fragments chargés *seulement* quand l'agent touche les fichiers concernés. Cursor (`.cursor/rules/*.mdc`) et Copilot (`.github/instructions/*.instructions.md`) ont convergé vers le même mécanisme — le standard de fait 2026 est la **constitution décomposée à chargement conditionnel**, pas le fichier unique toujours chargé.
 - **Agent Skills** (SKILL.md, lancés oct. 2025) : chargement en trois niveaux — nom+description toujours en contexte (~dizaines de tokens), corps du SKILL.md au déclenchement, fichiers annexes au besoin. La *progressive disclosure* fait nativement, et sans serveur, ce que le serveur MCP du papier fait avec du keyword matching. La doctrine officielle est explicite : « toujours-actif → CLAUDE.md court ; connaissance contextuelle/procédurale → skills ».
 - **Subagents avec mémoire persistante** : les agents du Tier 2 peuvent maintenant avoir chacun leur répertoire de mémoire auto-entretenu — la connaissance embarquée devient auto-actualisable entre sessions.
-- **Plugins + marketplaces** (oct. 2025) : un plugin empaquette skills, subagents, hooks, serveurs MCP en une unité installable et versionnée — le canal de distribution qui manquait au papier (dont le quickstart reste « copiez ces dossiers »).
+- **Plugins + marketplaces** (oct. 2025) : un plugin empaquette skills, subagents, hooks, serveurs MCP en une unité installable et versionnée — le canal de distribution qui manquait au papier (dont le quickstart restait « copiez ces dossiers » — résolu depuis : voir la note d'implémentation en §3).
 - **Côté API** : memory tool, context editing, compaction serveur, tool search avec `defer_loading` — l'équivalent premier-parti des trois étages existe aussi au niveau API.
 
 **Standardisation :**
@@ -167,6 +167,8 @@ Et une mise en garde : **What Context Does a Coding Agent Actually Need?** ([arX
 ---
 
 ## 3. Axes d'amélioration et d'implémentation proposés
+
+> **État d'implémentation (08/2026)** : depuis la rédaction de ce document, les axes **A1** (index front-matter + tables générées), **A2** (AGENTS.md canonique + règles conditionnelles), **A3** (hook de fin de session), **B1** (génération de skills), **B5** (CI) et **C2** (plugin installable) ont été **implémentés dans ce dépôt** (voir README). B2, B3, B4, C1 et C3 restent des pistes.
 
 Classés par effort croissant : les axes A sont réalisables en quelques sessions sur ce fork, les axes B demandent un vrai chantier, les axes C sont des projets. Fil conducteur issu de la veille : **moderniser les supports (les étages) avec les primitives natives, et concentrer l'effort original là où le papier reste sans équivalent — la fraîcheur de la connaissance (dérive + distillation).**
 

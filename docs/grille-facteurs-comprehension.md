@@ -62,7 +62,7 @@ Cas type : **harnais et modèles déjà choisis** (ex. un harnais natif type Cla
 | **Rendre le repo greppable** | Nommage cohérent et distinctif (la recherche agentique vit de `grep` : un concept = un nom, partout) ; un fichier = une classe ; conventions de chemins stables | V2/V3 | Faible |
 | **Exposer la structure** | Un index structurel (symboles/graphe d'appels, type tree-sitter servi par MCP ou LSP) branché sur les deux harnais | V3 | Moyen |
 | **Codifier la connaissance non-résidente** | Constitution + specs par sous-système (ce dépôt) ; au format portable **AGENTS.md** pour que le même investissement serve à *tous* les harnais et survive aux changements de modèle | V4 | Moyen, incrémental |
-| **Outiller la fraîcheur** | Drift-check en hook et en CI ; mise à jour des specs dans la même session que le code (axes A3/B3 de la feuille de route) | V5 | Moyen |
+| **Outiller la fraîcheur** | Drift-check en hook et en CI ; mise à jour des specs dans la même session que le code (axe A3 — implémenté depuis — et B3 de la feuille de route) | V5 | Moyen |
 | **Router les tâches par profil de variable** | Modèle fort (habitat natif) pour C2/C3 — transversal, architecture, debugging ; modèles économiques pour les tâches mécaniques *couvertes par une spec* — c'est la couverture V4 qui rend les modèles faibles viables | V1×V4 | Faible |
 
 Deux points d'attention dans une configuration multi-harnais/multi-modèles :

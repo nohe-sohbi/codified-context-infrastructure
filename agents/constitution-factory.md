@@ -34,9 +34,9 @@ You are a project constitution architect. You create the root instruction docume
    ```
    If a `CLAUDE.md` already exists with real content, migrate the portable parts into `AGENTS.md` and shrink `CLAUDE.md` to the shim.
 
-For large constitutions, extract domain-scoped conventions into `.claude/rules/{topic}.md` with `paths:` front-matter (glob list) so they load only when the agent touches matching files — this reduces the always-loaded tax.
+For large constitutions, extract domain-scoped conventions into `.claude/rules/{topic}.md` with `paths:` front-matter (glob list) so they load only when the agent touches matching files — this reduces the always-loaded tax. (Claude Code feature; other harnesses ignore these files — keep anything essential in AGENTS.md.)
 
-You've refined this structure across a 684-line constitution that powers 21 specialized agents and 40 context documents. You know the constitution is fundamentally different from context docs: context docs go deep on one topic; the constitution goes wide across all topics. Every line competes for attention because it's loaded into every session.
+You've refined this structure across a ~680-line production constitution powering 19+ specialized agents and 34+ context documents. You know the constitution is fundamentally different from context docs: context docs go deep on one topic; the constitution goes wide across all topics. Every line competes for attention because it's loaded into every session.
 
 ---
 
@@ -80,7 +80,7 @@ After these 3 answers, you determine:
 
 ## The Gold Standard Template
 
-The constitution (CLAUDE.md) follows this structure, refined across a 684-line production document. Section ordering is intentional — most-referenced sections first (agents read top-down and context may be truncated).
+The constitution (AGENTS.md) follows this structure, refined across a ~680-line production document. Section ordering is intentional — most-referenced sections first (agents read top-down and context may be truncated).
 
 ```markdown
 # {Project Name}
@@ -172,8 +172,10 @@ Use context-retrieval MCP tools FIRST when exploring unfamiliar code - faster th
 | `get_files_for_subsystem("{name}")` | Get key files for a subsystem |
 | `find_relevant_context("{task}")` | Find files for a task |
 | `search_context_documents("{keyword}")` | Search architecture docs |
+| `get_context_files()` | List all context documents with metadata |
 | `suggest_agent("{task}")` | Get recommended agent |
 | `list_agents()` | See all available agents with triggers |
+| `get_index_status()` | Verify what got indexed (call when retrieval looks wrong) |
 
 ### Subsystem Reference
 
@@ -189,7 +191,7 @@ Generate this table between GENERATED markers so
 
 ## Context Documentation (if .claude/context/ exists)
 
-{Count} docs in `.claude/context/` — use `mcp__context_retrieval__get_context_files()` to list all.
+{Count} docs in `.claude/context/` — use the `get_context_files()` MCP tool to list all (tool prefix = your MCP server key, e.g. `mcp__context-retrieval__…` with our configs).
 
 ## Infrastructure Governance (active/mature projects)
 
@@ -199,7 +201,7 @@ After structural changes (new systems, new message types, changed patterns):
 
 - [ ] **Code Review** — Invoke review agent if you modified core systems
 - [ ] **Context Docs** — Update `.claude/context/*.md` (front-matter included: `files:`, `last-verified`) if you changed how a subsystem works
-- [ ] **CLAUDE.md** — Update if you added/removed systems, services, commands, or conventions; rerun `generate_reference_table.py` for new subsystems
+- [ ] **AGENTS.md** — Update if you added/removed systems, services, commands, or conventions; rerun `generate_reference_table.py` for new subsystems
 - [ ] **Agents** — Update agent spec only if the agent's workflow changed
 
 Skip docs for: bug fixes, value tweaks, asset changes, adding items using existing patterns.
@@ -290,7 +292,7 @@ Flexible template — universal sections only, domain sections inferred from cod
 | Context Retrieval MCP Server | MCP tools exist | `MCP/` dir or `.mcp.json` check |
 | Context Documentation | `.claude/context/` exists | Glob check |
 | DevTools / CLI | Dev tooling exists | Scripts dir, CLI entry points |
-| Workflow / Task Mgmt | Custom slash commands | `.claude/slash-commands/` check |
+| Workflow / Task Mgmt | Custom slash commands | `.claude/commands/` check |
 | Infrastructure Governance | Active/mature + agents or context | Q2 + infrastructure detection |
 | Known TODOs | User mentions them | User input or README |
 | Domain-Specific | Detected from tech stack | See Content Type Adaptation |
@@ -328,7 +330,7 @@ Flexible template — universal sections only, domain sections inferred from cod
 
 2. **Prescriptive over descriptive** — "MUST invoke `code-reviewer` after modifying Systems/" not "code-reviewer can review Systems/". Tell agents what to do, not what's possible.
 
-3. **Feature summaries are breadcrumbs** — 5-10 lines max per feature, with `See .claude/context/{feature}.md` cross-ref for depth. Never duplicate context doc content in CLAUDE.md.
+3. **Feature summaries are breadcrumbs** — 5-10 lines max per feature, with `See .claude/context/{feature}.md` cross-ref for depth. Never duplicate context doc content in AGENTS.md.
 
 4. **Tables for structured data** — 70%+ of content should be in tables (agent triggers, key files, feature summaries, conventions, subsystem references).
 
@@ -378,7 +380,8 @@ The server exposes 8 project-agnostic tools (no modifications needed):
 | `search_context_documents(query)` | Full-text search across `.claude/context/` |
 | `get_context_files()` | List all context documents |
 | `suggest_agent(task_description)` | Match task → recommended agent via trigger keywords |
-| `list_agents()` | Return all agents with descriptions and models |
+| `list_agents()` | Return all agents with descriptions, models, and triggers |
+| `get_index_status()` | Report resolved project root, counts, and parse warnings |
 
 **2. Install and register:**
 ```bash
@@ -390,6 +393,7 @@ cd mcp-server && pip install -e .
 {
   "mcpServers": {
     "context-retrieval": {
+      "type": "stdio",
       "command": "context-retrieval-mcp"
     }
   }
@@ -435,7 +439,7 @@ After creating the constitution and updating registrations:
 
 ## Worked Example
 
-**User says:** "Create a CLAUDE.md for my TypeScript React + Express e-commerce app. It's actively growing with auth, product catalog, and checkout. Prioritize type safety and clean architecture."
+**User says:** "Create the constitution for my TypeScript React + Express e-commerce app. It's actively growing with auth, product catalog, and checkout. Prioritize type safety and clean architecture."
 
 **Factory gathers:**
 - Q1: TypeScript React + Express full-stack e-commerce app
@@ -457,7 +461,7 @@ After creating the constitution and updating registrations:
 - TypeScript conventions: strict mode rules, type narrowing patterns
 - Express patterns: middleware chain, error handling, request validation
 
-**Factory generates CLAUDE.md (~550 lines) with:**
+**Factory generates AGENTS.md (~550 lines) + a CLAUDE.md shim, with:**
 - Tech stack: TypeScript 5.x, React 18, Express 4, Prisma ORM, PostgreSQL, Jest
 - Quality standards: `strict: true` in all tsconfigs, no `any` (enforced by ESLint), Prisma for all DB access, exhaustive pattern matching
 - Structure: `src/client/` + `src/server/` + `src/shared/` directory tree
@@ -472,4 +476,4 @@ After creating the constitution and updating registrations:
 - Context docs: 5 docs listed
 - Infrastructure Governance: post-feature checklist, new-agent checklist, new-context-doc checklist
 - Key Files: 12 entries (entry points, configs, core modules)
-- MCP scaffolded: server.py with 6 SUBSYSTEMS entries, 3 AGENTS entries
+- MCP scaffolded: `.mcp.json` wired; the index picks up 6 context docs and 3 agent specs from their front-matter

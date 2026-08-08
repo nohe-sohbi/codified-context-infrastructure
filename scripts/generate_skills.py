@@ -3,7 +3,10 @@
 
 Each indexed subsystem gets a thin skill whose `paths:` globs auto-load it
 when the agent works on the subsystem's files (native replacement for
-constitution trigger tables). Hand-written skills are never touched.
+constitution trigger tables; the generated reference tables in the
+constitution remain as human-readable summaries). Hand-written skills are
+never touched. Layout contract: `scripts/` must stay a sibling of
+`mcp-server/`.
 
 Usage:
     python3 scripts/generate_skills.py [--project-root DIR] [--prune] [--check]
