@@ -13,7 +13,7 @@ AI coding agents have broad programming knowledge and zero project memory. Every
 /plugin install codified-context@codified-context-marketplace
 ```
 
-Then, in your project: *"Use the codified-context skill and set up this project."* The AI writes the docs — you answer 3 questions and review.
+Then, in your project, run **`/codified-context:init`** — it detects what already exists (an existing CLAUDE.md is never touched), creates the constitution only if missing, and **backfills context docs for your most critical subsystems** so the plugin is useful from the first session. The AI writes the docs — you approve the list and review.
 
 ## How it works
 
@@ -73,7 +73,7 @@ This repository is a modernized overhaul of the paper's companion framework: sin
 /plugin install codified-context@codified-context-marketplace
 ```
 
-This installs the three factory agents, the `codified-context` skill, the index-driven `context-retrieval` MCP server (requires `python3` 3.10+; it provisions the `mcp` SDK into a private venv on first serve, see `mcp-server/README.md`), and the drift-detection hooks. After setup, call the `get_index_status()` MCP tool — it must report **your** project's root.
+This installs the three factory agents, the `codified-context` skill, the **`/codified-context:init`** command, the index-driven `context-retrieval` MCP server (requires `python3` 3.10+; it provisions the `mcp` SDK into a private venv on first serve, see `mcp-server/README.md`), and the drift-detection hooks. Then run `/codified-context:init` — it ends by calling `get_index_status()`, which must report **your** project's root.
 
 ### Manual Setup (any harness)
 

@@ -20,11 +20,11 @@ The plugin bundles:
 | `context-retrieval` MCP server | Index-driven Tier-3 retrieval over your project's front-matter (no `pip install -e .` of the server needed — the only prerequisite is the `mcp` SDK: `pip install mcp`) |
 | Drift hooks | SessionStart check (recent commits vs specs) + Stop advisor (this session's edits vs specs) |
 
-Then, in your project:
+Then, in your project, run:
 
-> *"Use the codified-context skill and help me set up the context infrastructure for this project."*
+> **`/codified-context:init`**
 
-Verify the wiring with the `get_index_status()` MCP tool — it must report **your project's root** and list your docs/agents. If it resolved the wrong directory, set `CONTEXT_MCP_PROJECT_ROOT` in the MCP server's `env`.
+It detects what already exists (an existing constitution is never touched), creates one only if missing, and offers a **backfill**: it proposes your N most critical subsystems and writes their context docs in one session — the step that makes the plugin useful immediately instead of an empty box. It ends by verifying with `get_index_status()`, which must report **your project's root**. If it resolved the wrong directory, set `CONTEXT_MCP_PROJECT_ROOT` in the MCP server's `env`.
 
 ## Path B — Manual copy (any harness)
 

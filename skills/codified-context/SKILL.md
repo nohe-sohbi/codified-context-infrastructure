@@ -5,6 +5,10 @@ description: Bootstrap or maintain a codified context infrastructure in the curr
 
 # Codified Context Infrastructure
 
+> **Setting up a project? The `/codified-context:init` command walks the
+> whole sequence below (state detection → constitution → backfill →
+> verification).** This skill is the reference for everything else.
+
 You are working with the codified-context plugin (companion to
 arXiv:2602.20478). This SKILL.md lives at
 `<plugin-root>/skills/codified-context/SKILL.md` — the plugin root is two
