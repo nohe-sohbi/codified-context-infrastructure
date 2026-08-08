@@ -1,0 +1,13 @@
+{
+  "name": "codified-context-marketplace",
+  "owner": {
+    "name": "codified-context-infrastructure contributors"
+  },
+  "plugins": [
+    {
+      "name": "codified-context",
+      "source": "./",
+      "description": "Three-tier codified context infrastructure: factories, index-driven MCP retrieval, path-triggered context skills, and drift-detection hooks."
+    }
+  ]
+}

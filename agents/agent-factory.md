@@ -1,7 +1,6 @@
 ---
 name: agent-factory
-description: Agent construction specialist. Creates new specialized agents with varying codified knowledge depth by exploring any codebase, generating domain-expert content from AI knowledge, and producing AGENT.md files with full project registration. Carries proven agent patterns as a baked-in gold standard.
-tools: Read, Write, Edit, Grep, Glob, Bash, mcp__context_retrieval__list_subsystems, mcp__context_retrieval__get_files_for_subsystem, mcp__context_retrieval__find_relevant_context, mcp__context_retrieval__search_context_documents, mcp__context_retrieval__get_context_files, mcp__context_retrieval__suggest_agent, mcp__context_retrieval__list_agents
+description: Agent construction specialist. Creates new specialized agents with varying codified knowledge depth by exploring any codebase, generating domain-expert content from AI knowledge, and producing self-registering agent specs (front-matter with routing triggers). Carries proven agent patterns as a baked-in gold standard.
 model: opus
 ---
 

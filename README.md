@@ -64,72 +64,88 @@ LLM-based coding agents lack persistent memory: each session begins without awar
 |---------------|----------------|
 | §3.1 Constitution | `case-study/CLAUDE.md` |
 | §3.2 Specialized Agents | `case-study/agent-specs/` |
-| §3.3 Knowledge Base & MCP | `case-study/context-docs/`, `mcp-server/` |
+| §3.3 Knowledge Base & MCP | `case-study/context-docs/`, `mcp-server/` (maintained), `case-study/mcp-server/` (frozen original) |
 | §4.2–4.3 Evaluation Metrics | `data/` (scripts, methodology, sample data) |
 | §4.4 Case Studies | `data/case-study-excerpts/` |
-| §5.1 Factory Agents | `quickstart/` |
-| §5.2 Drift Detector | `case-study/scripts/context-drift-check.py` |
+| §5.1 Factory Agents | `agents/` |
+| §5.2 Drift Detector | `hooks/` (maintained), `case-study/scripts/context-drift-check.py` (frozen original) |
 | Appendix B (coordinate-wizard) | `case-study/agent-specs/coordinate-wizard.md` |
+
+> `case-study/` is kept **frozen** as verbatim paper artifacts (see `case-study/FROZEN.md`); the maintained, installable implementation lives at the repository root.
 
 ## Repository Structure
 
 ```
-quickstart/             Factory agents and MCP template to bootstrap the architecture
-  constitution-factory/       Generate a constitution for any project
-  agent-factory/              Generate specialized agents
-  context-factory/            Generate context base documents
-  mcp-server/                 Clean MCP server template (copy and customize)
-  README.md                   Setup guide
+.claude-plugin/         Claude Code plugin manifest + self-hosted marketplace
+agents/                 The three factory agents (flat, self-registering format)
+  constitution-factory.md     Generate a constitution for any project
+  agent-factory.md            Generate specialized agents
+  context-factory.md          Generate context base documents
+skills/                 The codified-context meta-skill (plugin front door)
+hooks/                  Drift detection: SessionStart check + Stop advisor + hooks.json
 
-mcp-server/             MCP retrieval service (Tier 3 implementation)
-  server.py                   All 7 tools with example subsystems
+mcp-server/             Index-driven MCP retrieval service (Tier 3, maintained)
+  context_retrieval_mcp/      Server + front-matter index + matching + skills generator
   pyproject.toml              Package configuration
-  README.md                   Setup instructions
+  README.md                   Setup, front-matter schema, migration notes
 
-case-study/             Real artifacts from the paper's case study project
+scripts/                Generators and validation
+  generate_skills.py          Context docs → path-triggered .claude/skills adapters
+  generate_reference_table.py Regenerate constitution tables from the index
+  validate_architecture.py    Cross-reference and front-matter validation
+
+tests/                  Pytest suite + fixtures/demo-project (living format example)
+quickstart/             Setup guide (plugin install + manual copy)
+
+case-study/             FROZEN verbatim artifacts from the paper's project
   CLAUDE.md                   The actual constitution (~660 lines, sanitized)
   context-docs/               5 representative knowledge base documents
   agent-specs/                5 real agent specifications
-  mcp-server/                 The full MCP server
-  scripts/                    Validation and drift detection
+  mcp-server/                 The original dict-based MCP server
+  scripts/                    Original validation and drift detection
 
 data/                   Interaction data and analysis
-  extract_prompts.py          Prompt extraction from Claude Code JSONL
-  data-collection-methodology.md
-  data-extraction-methodology.md
-  README.md
-
 paper/                  Paper reference, abstract, and citation
+docs/                   Analysis and perspectives (2026 research/tooling watch)
 ```
 
 > **Note:** The `case-study/` directory mirrors what would live under `.claude/` in a real project. The recommended production layout is `.claude/agents/{id}/AGENT.md` for agent specs and `.claude/context/{topic}.md` for knowledge base documents.
 
 ## Quick Start
 
-### Using Factory Agents (Recommended)
+### As a Claude Code Plugin (Recommended)
 
-Copy the three factory agents into your project and let your AI assistant bootstrap the infrastructure:
-
-```bash
-cp -r quickstart/constitution-factory quickstart/agent-factory quickstart/context-factory \
-  /your-project/.claude/agents/
+```
+/plugin marketplace add nohe-sohbi/codified-context-infrastructure
+/plugin install codified-context@codified-context-marketplace
 ```
 
-Then tell your AI assistant:
+This installs the three factory agents, the `codified-context` skill, the index-driven `context-retrieval` MCP server (requires `python3` + `pip install mcp`), and the drift-detection hooks. Then, in your project:
 
-> *"Read the quickstart README at `.claude/agents/constitution-factory/AGENT.md` and help me set up the codified context infrastructure for this project."*
+> *"Use the codified-context skill and help me set up the context infrastructure for this project."*
 
-The factories ask 3 questions each and generate tailored artifacts. Start with the constitution factory — see `quickstart/README.md` for the full bootstrapping sequence.
+### Manual Setup (any harness)
 
-### Manual Setup
+1. **Factories** — Copy `agents/*.md` into your project's `.claude/agents/` and let your assistant bootstrap (start with `constitution-factory`)
+2. **Context documents** — Create `.claude/context/{topic}.md` files with YAML front-matter (see `tests/fixtures/demo-project/` for the format, `case-study/context-docs/` for real-world content)
+3. **Agent specs** — Create `.claude/agents/{name}.md` files with front-matter incl. `triggers:`
+4. **MCP server** — Copy `mcp-server/`, `pip install -e .` — it indexes your front-matter automatically (see `mcp-server/README.md`)
+5. **Drift detection** — Copy `hooks/` (keep it a sibling of `mcp-server/`) and wire `hooks.json` into your settings
 
-If you prefer to set things up by hand, use the `case-study/` directory as a reference:
+See `quickstart/README.md` for the full bootstrapping sequence and the front-matter contract.
 
-1. **Constitution** — Use `case-study/CLAUDE.md` as a starting point for your own `CLAUDE.md`
-2. **Context documents** — Create `.claude/context/{topic}.md` files following the format in `case-study/context-docs/`
-3. **Agent specs** — Create `.claude/agents/{id}/AGENT.md` files following the format in `case-study/agent-specs/`
-4. **MCP server** — Copy and adapt `mcp-server/` for on-demand context retrieval (see `mcp-server/README.md`)
-5. **Drift detection** — Copy `case-study/scripts/context-drift-check.py` to detect stale specifications
+## Harness & Model Compatibility
+
+The knowledge artifacts are plain markdown with YAML front-matter — portable by construction. What each harness can consume:
+
+| Capability | Claude Code | pi / Codex / Gemini CLI | Cursor | Any CI/shell |
+|---|---|---|---|---|
+| Constitution | `CLAUDE.md` shim (`@AGENTS.md`) | `AGENTS.md` natively | `AGENTS.md` natively | — |
+| Context docs (Tier 3) | MCP tools + generated `ctx-*` skills (auto-load by `paths:`) | MCP server (`.mcp.json`-style config) or `--print-index` JSON | MCP server | `--print-index` JSON |
+| Specialized agents (Tier 2) | `.claude/agents/*.md` subagents | Convert front-matter to the tool's persona format | Rules/modes | — |
+| Drift detection | SessionStart + Stop hooks | Run `hooks/drift_check.py` manually or via the tool's hook system | — | `validate_architecture.py` + `drift_check.py` in CI |
+
+**Model routing intent** (encode it in your constitution; map per harness): judgment-heavy work — architecture, debugging, cross-cutting review — to your strongest model; pattern-following work *covered by a spec* to fast/economical models. Rich context docs are what make the cheaper tier viable: the spec compensates for the model.
 
 ## Design Principles
 

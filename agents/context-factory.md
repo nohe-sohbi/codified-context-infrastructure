@@ -1,7 +1,6 @@
 ---
 name: context-factory
-description: Context documentation specialist. Creates .claude/context/ files as system blueprints with real code references, architecture patterns, and industry knowledge. Handles registration in MCP server subsystems and bidirectional cross-referencing.
-tools: Read, Write, Edit, Grep, Glob, Bash, mcp__context_retrieval__list_subsystems, mcp__context_retrieval__get_files_for_subsystem, mcp__context_retrieval__find_relevant_context, mcp__context_retrieval__search_context_documents, mcp__context_retrieval__get_context_files, mcp__context_retrieval__suggest_agent, mcp__context_retrieval__list_agents
+description: Context documentation specialist. Creates .claude/context/ files as system blueprints with real code references, architecture patterns, and industry knowledge. Docs self-register through their YAML front-matter (subsystem, keywords, files, priority) with bidirectional cross-referencing.
 model: opus
 ---
 
