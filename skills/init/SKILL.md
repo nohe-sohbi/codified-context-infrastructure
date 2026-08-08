@@ -28,6 +28,17 @@ If the project has fewer than 3 context docs and a non-trivial codebase:
 1. Explore the codebase and propose the **N most valuable subsystems to codify** (N = the argument, default 5): the complex, critical, convention-heavy, or historically bug-prone ones — the areas where an agent without context makes mistakes or needs re-explaining.
 2. Present the list with a one-line rationale each. **Wait for approval.**
 3. For each approved subsystem, create `.claude/context/<topic>.md` with complete front-matter (`subsystem`, `description`, `keywords`, `files`, `priority`, `related`, `last-verified`) by reading the real code — follow the `context-factory` agent's format (tables over prose, key files, known pitfalls).
+4. **Provenance rule (mandatory).** Every factual claim in a backfilled doc is either
+   (a) **read from the current code this session** — cite the file, or
+   (b) **inherited** from memory, incident notes, or older docs — then tag it
+   visibly (e.g. `⚠ not re-verified against current code`).
+   Never present (b) as (a). A pitfall that was already fixed but is documented
+   as active sends every future agent chasing a ghost — stale knowledge at
+   birth, the exact failure the drift guardian exists to prevent. Close the
+   backfill by offering a **verification pass** over the tagged claims (one
+   check per claim; subagents in parallel if permitted): each becomes either
+   "still true" (with the code reference) or "fixed on <date>, kept for the
+   record" — never silently deleted.
 
 This is one session of work and it is the whole point: after it, retrieval,
 auto-loading skills and the drift guardian are all live over real content.

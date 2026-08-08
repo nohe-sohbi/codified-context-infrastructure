@@ -244,6 +244,8 @@ Context docs should use breadcrumb-style knowledge for industry-standard concept
 
 7. **Project-root-relative paths** — `src/ECS/Systems/TurboDashSystem.cs`, matching the `files:` front-matter convention; never absolute paths.
 
+7b. **Provenance is explicit** — facts read from the current code are stated plainly; anything inherited from memory, incident notes, or older docs carries a visible `⚠ not re-verified` tag until a verification pass upgrades it. Never present inherited knowledge as verified.
+
 8. **Cross-references are bidirectional** — if the new doc links to `ghost-mode.md`, update `ghost-mode.md` to link back.
 
 9. **Blueprint sections clearly marked** — use "(planned)" or "(future)" tags.
