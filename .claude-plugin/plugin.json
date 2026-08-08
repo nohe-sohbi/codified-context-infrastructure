@@ -11,6 +11,5 @@
   "keywords": ["context-engineering", "knowledge-base", "mcp", "drift-detection", "agents"],
   "agents": ["./agents/constitution-factory.md", "./agents/agent-factory.md", "./agents/context-factory.md"],
   "skills": "./skills",
-  "hooks": "./hooks/hooks.json",
   "mcpServers": "./.claude-plugin/mcp.json"
 }
