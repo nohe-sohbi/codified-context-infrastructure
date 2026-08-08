@@ -28,7 +28,18 @@ If the project has fewer than 3 context docs and a non-trivial codebase:
 1. Explore the codebase and propose the **N most valuable subsystems to codify** (N = the argument, default 5): the complex, critical, convention-heavy, or historically bug-prone ones — the areas where an agent without context makes mistakes or needs re-explaining.
 2. Present the list with a one-line rationale each. **Wait for approval.**
 3. For each approved subsystem, create `.claude/context/<topic>.md` with complete front-matter (`subsystem`, `description`, `keywords`, `files`, `priority`, `related`, `last-verified`) by reading the real code — follow the `context-factory` agent's format (tables over prose, key files, known pitfalls).
-4. **Provenance rule (mandatory).** Every factual claim in a backfilled doc is either
+
+   **Depth contract (mandatory).** Breadth is selective — never document
+   subsystems speculatively — but depth is total: a backfilled doc requires a
+   **full read of every file it declares in `files:`**, not grep sampling.
+   Parallelize with subagents when permitted (one per subsystem). If a
+   subsystem's file set is too large to read fully this session, say so and
+   either narrow its scope or split the backfill across sessions — never
+   compensate with guesswork. Close by reporting coverage honestly
+   (files read in full vs declared).
+4. **Provenance rule (mandatory).** With the depth contract honored, most
+   claims are read from code; what remains is knowledge that is not IN the
+   code (incident history, ops lore, decisions). Every factual claim is either
    (a) **read from the current code this session** — cite the file, or
    (b) **inherited** from memory, incident notes, or older docs — then tag it
    visibly (e.g. `⚠ not re-verified against current code`).
