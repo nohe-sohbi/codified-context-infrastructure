@@ -1,95 +1,58 @@
 # Context Retrieval MCP Server
 
-A context-retrieval MCP (Model Context Protocol) server that implements **Tier 3** of the codified context infrastructure. It gives Claude Code on-demand access to project architecture knowledge without loading everything into the prompt.
+An **index-driven** context-retrieval MCP (Model Context Protocol) server that implements **Tier 3** of the codified context infrastructure. It gives AI coding agents on-demand access to project architecture knowledge without loading everything into the prompt — and without any hand-maintained registry.
 
 ## What It Does
 
-The server exposes 7 tools via the MCP protocol:
+The server exposes 8 tools via the MCP protocol:
 
 | Tool | Purpose |
 |------|---------|
 | `list_subsystems()` | Enumerate all architectural subsystems |
 | `get_files_for_subsystem(subsystem)` | Get key files and docs for a subsystem |
-| `find_relevant_context(task_description)` | Fuzzy-match a task to relevant subsystems and files |
-| `get_context_files()` | List all context documents in `.claude/context/` |
+| `find_relevant_context(task_description)` | Match a task to relevant subsystems and files |
+| `get_context_files()` | List all context documents with metadata |
 | `search_context_documents(query)` | Full-text search across all context documents |
 | `suggest_agent(task_description)` | Recommend which specialized agent to invoke |
 | `list_agents()` | Enumerate all agents with descriptions and triggers |
+| `get_index_status()` | Debug probe: resolved project root, counts, parse warnings |
 
-The first 5 tools implement **context retrieval** — they let the AI agent find relevant architecture docs and source files for any task. The last 2 implement **agent routing** — they help the AI agent (or a Plan-mode orchestrator) choose the right specialized sub-agent.
+Resources: `context://index` (the resolved index as JSON) and `context://{subsystem}` (the full context document).
 
-## Architecture
+## The Index: Front-Matter as Single Source of Truth
 
-```
-┌─────────────────────────────────────────────┐
-│  Claude Code (AI Agent)                     │
-│  ┌──────────────────────────────────────┐   │
-│  │  "I need to fix the camera system"   │   │
-│  └──────────────┬───────────────────────┘   │
-│                 │ MCP tool call              │
-│  ┌──────────────▼───────────────────────┐   │
-│  │  Context Retrieval MCP Server        │   │
-│  │  ┌─────────────────────────────────┐ │   │
-│  │  │  SUBSYSTEMS dict (the index)    │ │   │
-│  │  │  - keywords per subsystem       │ │   │
-│  │  │  - file paths per subsystem     │ │   │
-│  │  │  - context doc paths            │ │   │
-│  │  └──────────────┬──────────────────┘ │   │
-│  │                 │ keyword matching    │   │
-│  │  ┌──────────────▼──────────────────┐ │   │
-│  │  │  Returns: rendering subsystem   │ │   │
-│  │  │  Files: Camera2D.cs, ...        │ │   │
-│  │  │  Docs: coordinate-systems.md    │ │   │
-│  │  └─────────────────────────────────┘ │   │
-│  └──────────────────────────────────────┘   │
-└─────────────────────────────────────────────┘
+There is **no SUBSYSTEMS/AGENTS dict to maintain**. The server scans the project's own artifacts at startup and rebuilds automatically whenever they change:
+
+- **`.claude/context/*.md`** — each context doc declares its own metadata:
+
+```yaml
+---
+subsystem: save-system        # index key; defaults to the filename stem
+name: Save System             # defaults to the first H1
+description: Two-tier save architecture (disk + memory)
+keywords: [save, persistence, autosave]
+files:                        # project-root-relative; trailing "/" = directory
+  - src/Services/SaveService.py
+  - src/Services/Implementation/
+priority: high                # drift-warning tier: high | medium | low
+related: [item-system]        # other subsystem keys (bidirectional)
+version: 2
+last-verified: 2026-08-08
+---
 ```
 
-## Key Data Structures
+- **`.claude/agents/**/*.md`** — each agent spec declares `name`, `description`, `model`, and an optional `triggers: [...]` list that powers `suggest_agent()` routing.
 
-### SUBSYSTEMS dict
+Writing complete front-matter **is** the registration step. Documents carrying only the legacy `<!-- v1 | last-verified: ... -->` header still index (minimally, with a warning); markdown files with neither are skipped.
 
-The core index. Maps subsystem keys to metadata:
-
-```python
-SUBSYSTEMS = {
-    "rendering": {
-        "name": "Sprite Rendering & Camera",
-        "description": "...",
-        "keywords": ["sprite", "camera", "draw", "render", ...],
-        "files": [
-            "ECS/Systems/SpriteRenderSystem.cs",
-            "Camera/Camera2D.cs",
-            ".claude/context/coordinate-systems.md",
-        ],
-    },
-    # ... 25 subsystems in the case study data
-}
-```
-
-**How retrieval works**: When the agent calls `find_relevant_context("fix camera offset")`, the server tokenizes the task description, matches tokens against each subsystem's keywords, and returns the top-scoring subsystems with their files.
-
-### AGENTS dict
-
-Maps agent names to metadata for routing:
-
-```python
-AGENTS = {
-    "coordinate-wizard": {
-        "description": "Isometric coordinate and camera specialist",
-        "triggers": ["camera", "isometric", "world-to-screen", ...],
-        "model": "opus",
-    },
-    # ... 17 agents in the case study data (the paper's project had 19)
-}
-```
+Matching uses word-boundary matching for single-word terms (the keyword `ai` does not match "maintain"), substring matching for multi-word phrases, and a uniqueness bonus for terms declared by few entries (see `context_retrieval_mcp/matching.py`).
 
 ## Setup
 
 ### Prerequisites
 
 - Python 3.10+
-- `mcp` package (`pip install mcp`)
+- `mcp` package (`pip install mcp`) — SDK v1 and v2 both supported
 
 ### Installation
 
@@ -100,19 +63,30 @@ pip install -e .
 
 ### Running
 
-Three equivalent launch modes are supported:
+Three equivalent launch modes:
 
 ```bash
-context-retrieval-mcp                                  # console script (after pip install)
-python -m context_retrieval_mcp                        # module mode (after pip install)
-python3 context_retrieval_mcp/server.py                # direct run (no install needed, only `pip install mcp`)
+context-retrieval-mcp                       # console script (after pip install)
+python -m context_retrieval_mcp             # module mode (after pip install)
+python3 context_retrieval_mcp/server.py     # direct run (no install; only `pip install mcp` needed)
 ```
 
-Smoke test / JSON escape hatch for non-MCP consumers (pi.dev tooling, debugging):
+Smoke test / JSON escape hatch for non-MCP consumers (pi.dev tooling, CI, debugging):
 
 ```bash
-context-retrieval-mcp --print-index
+context-retrieval-mcp --print-index [--project-root DIR]
 ```
+
+### Project Root Resolution
+
+The server indexes the **project it runs in**, resolved as (first hit wins):
+
+1. `$CONTEXT_MCP_PROJECT_ROOT` (explicit override)
+2. `$CLAUDE_PROJECT_DIR` (set by Claude Code)
+3. Walk up from the current directory to the first `.git`/`.claude` marker
+4. The current directory
+
+If the index looks wrong from inside a session, call `get_index_status()` — it reports the resolved root, counts, and every parse warning.
 
 ### Claude Code Integration
 
@@ -129,44 +103,38 @@ Add to your project's `.mcp.json` (at project root):
 }
 ```
 
-This uses the script entry point installed by `pip install -e .`. Alternatively, use the direct-run mode with `"command": "python3", "args": ["<path>/context_retrieval_mcp/server.py"]`.
+Or, with no pip install (the way the codified-context plugin runs it):
 
-### Path Configuration
-
-Update these variables at the top of `server.py` to match your project:
-
-```python
-PROJECT_ROOT = Path(__file__).parent.parent.parent  # Adjust to your layout
-ENGINE_ROOT = PROJECT_ROOT / "src"                   # Where source code lives
-CONTEXT_DIR = PROJECT_ROOT / ".claude" / "context"   # Where context docs live
+```json
+{
+  "mcpServers": {
+    "context-retrieval": {
+      "type": "stdio",
+      "command": "python3",
+      "args": ["<path-to>/context_retrieval_mcp/server.py"]
+    }
+  }
+}
 ```
 
-## Adapting for Your Project
+## Migrating From the v1 Template
 
-1. **Replace the SUBSYSTEMS dict** with your project's subsystems. Each entry needs:
-   - `name`: Human-readable name
-   - `description`: What the subsystem does
-   - `keywords`: Tokens that match task descriptions to this subsystem
-   - `files`: Relative paths to key source files and context docs
+If you adopted the earlier dict-based template: move each `SUBSYSTEMS` entry into the front-matter of its context doc (`keywords`, `files`, description) and each `AGENTS` entry into its agent spec's front-matter (`triggers:`). As a stopgap, the `EXTRA_SUBSYSTEMS`/`EXTRA_AGENTS` dicts at the top of `server.py` are merged *under* the front-matter index (front-matter wins on collision), so you can migrate incrementally.
 
-2. **Replace the AGENTS dict** (or remove `suggest_agent`/`list_agents` if you don't use specialized agents)
-
-3. **The tool functions are generic** — they operate on whatever data is in SUBSYSTEMS/AGENTS. You shouldn't need to modify the `@mcp.tool` implementations.
-
-4. **Keep the index accurate** — When you add/rename/delete source files, update the SUBSYSTEMS dict. The `validate-architecture.sh` script (in `case-study/scripts/`) automates checking for stale references.
+The original dict-based case-study server is preserved verbatim in `case-study/mcp-server/` (see `case-study/FROZEN.md`).
 
 ## How It Fits in the Architecture
 
 ```
-Tier 1: Constitution (CLAUDE.md)
+Tier 1: Constitution (AGENTS.md / CLAUDE.md)
     ↓ always loaded, references Tier 3 tools
-Tier 2: Specialized Agents (19 domain experts)
+Tier 2: Specialized Agents (.claude/agents/*.md)
     ↓ suggest_agent() routes tasks to agents
-Tier 3: Context Retrieval (THIS SERVER)
+Tier 3: Context Retrieval (THIS SERVER over .claude/context/*.md)
     ↑ find_relevant_context() discovers docs
 ```
 
-The constitution (CLAUDE.md) instructs the AI agent to call MCP tools *first* when exploring unfamiliar code. This creates a pull-based retrieval pattern where the agent requests exactly the context it needs, rather than having everything loaded upfront.
+The constitution instructs the AI agent to call MCP tools *first* when exploring unfamiliar code. This creates a pull-based retrieval pattern where the agent requests exactly the context it needs, rather than having everything loaded upfront.
 
 ## File Structure
 
@@ -175,10 +143,12 @@ mcp-server/
 ├── pyproject.toml                # Package configuration
 ├── README.md                     # This file
 └── context_retrieval_mcp/
-    ├── __init__.py               # Package exports (mcp, main)
+    ├── __init__.py               # Deliberately light (see stdlib-only contract)
     ├── __main__.py               # python -m entry point
+    ├── context_index.py          # Front-matter parser + index (stdlib-only)
     ├── matching.py               # Unified keyword/trigger scoring (stdlib-only)
-    └── server.py                 # Main server (~1,600 lines, mostly data)
+    ├── skills_gen.py             # Context-doc → Agent Skill adapter generator
+    └── server.py                 # The MCP server (imports the modules above)
 ```
 
-The SUBSYSTEMS and AGENTS dicts are large but serve as a readable, grep-able index that's easy to maintain alongside the codebase.
+**Stdlib-only contract**: `context_index.py` and `matching.py` never import `mcp` — session hooks and generator scripts import them under a bare `python3`.

@@ -163,9 +163,15 @@ Use context-retrieval MCP tools FIRST when exploring unfamiliar code - faster th
 
 ### Subsystem Reference
 
-| Key | Description | Key Files |
-|-----|-------------|-----------|
-| `{id}` | {description} | {files} |
+Generate this table between GENERATED markers so
+`scripts/generate_reference_table.py` can keep it fresh from the index:
+
+```markdown
+<!-- BEGIN GENERATED: subsystem-reference -->
+| Key | Description | Doc | Priority |
+|-----|-------------|-----|----------|
+<!-- END GENERATED: subsystem-reference -->
+```
 
 ## Context Documentation (if .claude/context/ exists)
 
@@ -178,27 +184,23 @@ Use context-retrieval MCP tools FIRST when exploring unfamiliar code - faster th
 After structural changes (new systems, new message types, changed patterns):
 
 - [ ] **Code Review** — Invoke review agent if you modified core systems
-- [ ] **Context Docs** — Update `.claude/context/*.md` if you changed how a subsystem works
-- [ ] **CLAUDE.md** — Update if you added/removed systems, services, commands, or conventions
-- [ ] **MCP server** — Update subsystem registry if you added/renamed/deleted source files
-- [ ] **Agents** — Update agent AGENT.md only if the agent's workflow changed
+- [ ] **Context Docs** — Update `.claude/context/*.md` (front-matter included: `files:`, `last-verified`) if you changed how a subsystem works
+- [ ] **CLAUDE.md** — Update if you added/removed systems, services, commands, or conventions; rerun `generate_reference_table.py` for new subsystems
+- [ ] **Agents** — Update agent spec only if the agent's workflow changed
 
 Skip docs for: bug fixes, value tweaks, asset changes, adding items using existing patterns.
 
 ### New Agent Checklist
 
-1. Create `.claude/agents/{agent-id}/AGENT.md`
-2. Add to CLAUDE.md Automatic Triggers table
-3. Add to CLAUDE.md Quick Reference table
-4. Add to MCP server AGENTS registry
+1. Create `.claude/agents/{agent-id}.md` with full front-matter (name, description, tools, model, `triggers:`) — the index picks it up automatically
+2. Rerun `generate_reference_table.py` to refresh the generated agent table
 (Use `agent-factory` to automate this.)
 
 ### New Context Doc Checklist
 
-1. Create `.claude/context/{topic}.md`
-2. Add to MCP server SUBSYSTEMS dict
-3. Add bidirectional cross-references to related context docs
-4. Update CLAUDE.md only if introducing a genuinely new subsystem
+1. Create `.claude/context/{topic}.md` with full front-matter (subsystem, description, keywords, files, priority) — the index picks it up automatically
+2. Add bidirectional `related:` cross-references to close context docs
+3. Rerun `generate_reference_table.py` only if introducing a genuinely new subsystem
 (Use `context-factory` to automate this.)
 
 ### Drift Detection (if hooks configured)
@@ -344,12 +346,15 @@ When creating a constitution for an active or mature project that doesn't yet ha
 
 ### What to Scaffold
 
-**1. MCP server directory** — Use the template from the companion repo's `quickstart/mcp-server/` as a starting point. Copy it into the project (e.g., as `mcp-server/` at project root) and customize:
-- `server.py`: Update `PROJECT_ROOT`, `SOURCE_ROOT`, `CONTEXT_DIR` path variables
-- `SUBSYSTEMS` dict: Populate with entries discovered during codebase exploration
-- `AGENTS` dict: Populate with entries from `.claude/agents/` (empty if no agents yet)
+**1. MCP server** — Use the companion repo's `mcp-server/` package. It is
+**index-driven**: no dicts to populate, no path variables to edit. It scans
+the project's `.claude/context/*.md` and `.claude/agents/**/*.md`
+front-matter at startup and refreshes automatically when those files change.
+Copy `mcp-server/` into the project (or reference the installed
+codified-context plugin, which bundles it) — the "population" step is simply
+writing context docs with complete front-matter.
 
-The template includes all 7 tool functions (project-agnostic — no modifications needed):
+The server exposes 8 project-agnostic tools (no modifications needed):
 
 | Tool | Purpose |
 |------|---------|
@@ -383,9 +388,11 @@ cd mcp-server && pip install -e .
 
 ### Population
 
-The factory populates the data dicts based on codebase exploration:
-- **SUBSYSTEMS**: One entry per major source directory or module. Each gets a name, description, keywords (5-10 terms), and file list (3-10 key files).
-- **AGENTS**: One entry per existing `.claude/agents/*/AGENT.md`. Each gets name, description, triggers (from AGENT.md), and model.
+There are no data dicts. The factory "populates" the index by generating
+context docs with complete front-matter — one doc per major subsystem, each
+declaring name, description, keywords (5-10 terms), and `files:` (3-10 key
+paths). Agents self-register the same way through their own front-matter.
+Verify with `get_index_status()` or `--print-index`.
 
 ---
 

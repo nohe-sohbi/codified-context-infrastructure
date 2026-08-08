@@ -11,14 +11,14 @@ These agents implement the architecture described in "Codified Context: Infrastr
 | Component | Creates | Tier |
 |-----------|---------|-------|
 | `constitution-factory` | Your project's CLAUDE.md (root instruction document loaded every session) | Tier 1: Constitution |
-| `mcp-server` | Context-retrieval MCP server (copy, customize, and install) | Tier 3: Retrieval |
+| `../mcp-server/` | Index-driven context-retrieval MCP server (copy and install — no customization needed) | Tier 3: Retrieval |
 | `agent-factory` | Specialized domain-expert agents with deep codified knowledge | Tier 2: Agents |
 | `context-factory` | Knowledge base documents in `.claude/context/` | Tier 3: Knowledge Base |
 
 **Setup:**
 
 1. Copy the factory folders into your project's `.claude/agents/` directory
-2. Copy `mcp-server/` into your project (for on-demand context retrieval)
+2. Copy the repo's `mcp-server/` into your project (for on-demand context retrieval)
 3. Ask your AI assistant to read this README
 4. Run the `constitution-factory` first — it creates the foundation everything else builds on
 
@@ -43,17 +43,21 @@ The AI will handle the rest — reading the factory specs, asking you the right 
    │   ├── constitution-factory/AGENT.md
    │   ├── agent-factory/AGENT.md
    │   └── context-factory/AGENT.md
-   └── mcp-server/              # Copy from quickstart/mcp-server/
-       ├── server.py
+   └── mcp-server/              # Copy from the repo root's mcp-server/
        ├── pyproject.toml
-       ├── __init__.py
-       └── __main__.py
+       └── context_retrieval_mcp/
+           ├── __init__.py
+           ├── __main__.py
+           ├── context_index.py
+           ├── matching.py
+           ├── skills_gen.py
+           └── server.py
    ```
 
 2. Verify the files are in place:
    ```bash
    ls .claude/agents/*/AGENT.md
-   ls mcp-server/server.py
+   ls mcp-server/context_retrieval_mcp/server.py
    ```
 
 3. The factories are now available as agents. Each factory asks exactly 3 questions before generating anything.
@@ -82,31 +86,34 @@ Set up the context-retrieval MCP server for on-demand architecture discovery. Th
 
 **Prerequisites:** Python 3.10+, `pip install mcp`
 
+The server is **index-driven**: it scans your project's `.claude/context/*.md`
+and `.claude/agents/**/*.md` front-matter — there are no dicts to populate and
+no paths to edit. Writing docs with complete front-matter (Phase 4) is what
+populates it.
+
 **Setup:**
 
-1. Copy `quickstart/mcp-server/` into your project root (or wherever you prefer)
-2. Edit `server.py`: update `PROJECT_ROOT`, `SOURCE_ROOT`, `CONTEXT_DIR` paths for your project layout
-3. Replace placeholder `SUBSYSTEMS` entries with your project's subsystems (the constitution factory can help identify these)
-4. Replace placeholder `AGENTS` entries with your agents (or leave empty if none yet)
-5. Install the package:
+1. Copy the repo's `mcp-server/` into your project root (or wherever you prefer)
+2. Install the package:
    ```bash
    cd mcp-server && pip install -e .
    ```
-6. Create `.mcp.json` at your project root:
+3. Create `.mcp.json` at your project root:
    ```json
    {
      "mcpServers": {
        "context-retrieval": {
+         "type": "stdio",
          "command": "context-retrieval-mcp"
        }
      }
    }
    ```
-7. Restart Claude Code to pick up the MCP server
+4. Restart Claude Code to pick up the MCP server, then call `get_index_status()` to verify it resolved your project root
 
 **Skip this phase** for greenfield projects — come back to it once you have enough code to index.
 
-See `quickstart/mcp-server/README.md` for detailed customization guidance.
+See `mcp-server/README.md` for the front-matter schema and detailed guidance.
 
 #### Phase 3: Agents (as domains emerge)
 
@@ -151,7 +158,7 @@ Creates the root instruction document (CLAUDE.md) that AI agents load at the sta
 - Generates feature breadcrumbs (5-10 line summaries with cross-references to detailed docs)
 - Creates agent trigger tables and MCP subsystem references if infrastructure exists
 - Adapts to 5 project domains: Game Dev, Web App, CLI/Library, Data Science/ML, General
-- For active/mature projects, can scaffold MCP retrieval infrastructure (alternatively, use the `quickstart/mcp-server/` template directly — see Phase 2)
+- For active/mature projects, can scaffold MCP retrieval infrastructure (alternatively, copy the repo's `mcp-server/` directly — see Phase 2)
 
 #### Agent Factory (`agent-factory`)
 
@@ -213,7 +220,7 @@ These factories are written for Claude Code's `.claude/agents/` system, but the 
 | Constitution | `CLAUDE.md` at project root | `.cursorrules`, `.github/copilot-instructions.md`, custom system prompts |
 | Agent specs | `.claude/agents/{id}/AGENT.md` with frontmatter | Custom prompt files, tool configurations, or system prompt templates |
 | Knowledge base | `.claude/context/*.md` + MCP retrieval | RAG pipelines, prompt includes, documentation directories |
-| MCP retrieval | FastMCP server with keyword matching (see `quickstart/mcp-server/`) | Embedding-based retrieval, file watchers, IDE plugins |
+| MCP retrieval | Index-driven MCP server over front-matter (see `mcp-server/`) | Embedding-based retrieval, file watchers, IDE plugins |
 
 **To adapt the factories for a different tool:**
 1. Use the constitution factory's output (CLAUDE.md) as a template for your tool's instruction format

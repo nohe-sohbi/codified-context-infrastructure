@@ -304,47 +304,44 @@ Derive the model from the domain description:
 
 ## Registration
 
-After generating the AGENT.md, update all registration points in the project.
+**The front-matter IS the registration.** The MCP server's `suggest_agent`/
+`list_agents` tools and the validators build their index by scanning
+`.claude/agents/**/*.md` front-matter — there is no dict or table to update
+by hand.
 
-### Registration Points
-
-After creating the AGENT.md file, update all registration points in the project. Look for these common locations:
-
-**1. Create the agent file:**
+**1. Create the agent file (flat layout):**
 ```
-.claude/agents/{agent-id}/AGENT.md
+.claude/agents/{agent-id}.md
 ```
-Agent ID: kebab-case, 2-4 words, descriptive. Examples: `code-reviewer`, `dungeon-tester`, `ui-designer`.
+Agent ID: kebab-case, 2-4 words, descriptive. Examples: `code-reviewer`,
+`dungeon-tester`, `ui-designer`. (The legacy nested
+`.claude/agents/{agent-id}/AGENT.md` layout is still discovered, but new
+agents use flat files.)
 
-**2. Update the project constitution (CLAUDE.md or equivalent):**
+**2. Include `triggers:` in the front-matter** — this is what powers
+automatic routing via `suggest_agent()`:
 
-Look for agent trigger tables and add entries for the new agent:
-- Automatic Triggers table — when should this agent be invoked?
-- Quick Reference table — agent name, model, primary focus
-
-**3. Update MCP server registry (if MCP infrastructure exists):**
-
-Find the AGENTS dict in your MCP server and add:
-```python
-"{agent-id}": {
-    "name": "{Display Name}",
-    "description": "{1-line summary matching AGENT.md frontmatter description}",
-    "triggers": [{trigger keywords as quoted strings}],
-    "model": "{opus|sonnet}",
-},
+```yaml
+---
+name: {agent-id}
+description: {One-line expert role statement. Start with role, end with scope.}
+tools: Read, Grep, Glob, Bash
+model: {opus|sonnet|inherit}
+triggers: [{trigger keywords}, "{multi-word phrase}"]
+---
 ```
 
-**4. Check for other registration points:**
-- Orchestrator/plan agents that reference agent lists
-- CI/CD configs that validate agent structure
-- Any delegation tables or routing logic
+Modern optional fields when they earn their keep: `disallowedTools`,
+`memory: project` (persistent per-agent memory), `permissionMode`.
 
-Match the existing format exactly — read surrounding entries to understand column structure.
+**3. Regenerate the constitution's agent table:**
+`python3 scripts/generate_reference_table.py` refreshes the generated
+Quick Reference block (no-op without GENERATED markers).
 
 **Trigger keyword design:**
 - 7-15 keywords total
 - Mix of single-word (matched by word boundary) and multi-word (matched as substring)
-- Prefer unique terms — check existing agents' triggers to avoid overlap
+- Prefer unique terms — the scorer gives rarer triggers a uniqueness bonus; check `list_agents()` to avoid overlap
 - Include: technical terms, natural language descriptions, tool names, common synonyms
 
 ---
@@ -353,17 +350,17 @@ Match the existing format exactly — read surrounding entries to understand col
 
 Run through this after creating the agent and updating registrations:
 
-- [ ] **AGENT.md exists** at `.claude/agents/{agent-id}/AGENT.md`
-- [ ] **Frontmatter complete**: name, description, tools, model — all 4 fields
+- [ ] **Agent file exists** at `.claude/agents/{agent-id}.md` (flat layout)
+- [ ] **Frontmatter complete**: name, description, tools, model + `triggers:` for routing
 - [ ] **Mode rules present**: Either EXPLORE/IMPLEMENT toggle or read-only block
 - [ ] **Tool list correct**: Matches read-only (no Edit/Write) or read-write (includes Edit/Write)
 - [ ] **Identity authoritative**: "You are a [expert]" with experience/philosophy, not "You help with..."
 - [ ] **Key Files real**: Paths verified to exist (codebase agents) or section omitted (AI-expertise agents)
 - [ ] **Code examples quality**: Real code from codebase OR realistic idiomatic code — never pseudocode
 - [ ] **Output Format present**: Specific deliverable format, not generic "provide feedback"
-- [ ] **Agent-id consistent**: Same kebab-case ID across AGENT.md frontmatter, CLAUDE.md tables, server.py dict
-- [ ] **Trigger keywords unique**: No heavy overlap with existing agents (check server.py AGENTS dict)
-- [ ] **All registration points updated**: Read back each modified file to confirm
+- [ ] **Trigger keywords unique**: No heavy overlap with existing agents (check `list_agents()` or `--print-index`)
+- [ ] **Index check**: agent appears in `suggest_agent()` for a representative task
+- [ ] **Constitution table**: regenerated via `generate_reference_table.py` (if GENERATED markers exist)
 - [ ] **Line count in range**: light 150-250, standard 300-500, deep 700-1000+
 
 ---

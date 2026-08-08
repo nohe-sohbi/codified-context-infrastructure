@@ -64,7 +64,18 @@ After these 3 answers, you determine:
 Every context doc follows this structure. Derived from 40 proven documents.
 
 ```markdown
-<!-- v1 | last-verified: {TODAY} -->
+---
+subsystem: {subsystem-id}
+name: {Title}
+description: {1-2 sentence summary}
+keywords: [{search terms}]
+files:
+  - {src/path/File.cs}
+priority: medium
+related: []
+version: 1
+last-verified: {TODAY}
+---
 # {Title}
 
 {1-3 sentence overview — what this system does, why it matters, key design choice}
@@ -244,45 +255,53 @@ Context docs should use breadcrumb-style knowledge for industry-standard concept
 
 ## Registration
 
-After generating the context doc, update all registration points.
+**Writing complete front-matter IS the registration.** The MCP server, the
+drift hooks, the skills generator, and the validators all build their index
+by scanning `.claude/context/*.md` front-matter — there is no dict to update
+anywhere.
 
-### 1. Create the context file
+### 1. Create the context file with full front-matter
 
-`.claude/context/{topic-name}.md`
-- Kebab-case filename, 2-4 words, topic-descriptive
-- Examples: `turbo-system.md`, `ghost-mode.md`, `vacuum-pickup-system.md`
+`.claude/context/{topic-name}.md` — kebab-case filename, 2-4 words
+(e.g., `turbo-system.md`, `ghost-mode.md`). Start the file with:
 
-### 2. Update MCP server SUBSYSTEMS dict
-
-File: Your MCP server's SUBSYSTEMS dict (e.g., `mcp-server/server.py`)
-
-Find the most relevant existing subsystem(s) and add the context doc path to their `"files"` list:
-```python
-".claude/context/{new-doc}.md",
+```yaml
+---
+subsystem: {subsystem-id}        # index key; defaults to the filename stem
+name: {Display Name}
+description: {1-2 sentence summary — this powers retrieval and skills}
+keywords: [{search terms that match task descriptions}]
+files:                           # project-root-relative; trailing "/" = directory
+  - {src/path/File.cs}
+  - {src/some/dir/}
+priority: {high|medium|low}      # drift-warning tier (default: medium)
+related: [{other-subsystem-ids}]
+version: 1
+last-verified: {TODAY}
+---
 ```
 
-If documenting a genuinely new subsystem, add a new entry:
-```python
-"{subsystem-id}": {
-    "name": "{Display Name}",
-    "description": "{1-2 sentence summary}",
-    "keywords": [{relevant search terms as strings}],
-    "files": [
-        "{source/files.cs}",
-        ".claude/context/{new-doc}.md",
-    ],
-},
-```
+Keyword design (same rules as agent triggers): 7-15 terms, mix single words
+(word-boundary matched) and multi-word phrases (substring matched), prefer
+terms unique to this subsystem.
 
-### 3. Update CLAUDE.md (only if needed)
+### 2. Regenerate the constitution tables (only for new subsystems)
 
-Most context docs don't require CLAUDE.md changes. Only update if:
-- The doc covers a genuinely new subsystem not in the subsystem reference table
-- The doc introduces new conventions that affect how agents should behave
+If this doc covers a genuinely new subsystem, refresh the generated
+reference table in the constitution: `python3 scripts/generate_reference_table.py`
+(no-op if the constitution has no GENERATED marker blocks). Docs that extend
+an existing subsystem need nothing.
 
-### 4. Cross-reference existing context docs
+### 3. Cross-reference existing context docs
 
-Add the new doc to the References → Related Context Docs section of 1-2 topically related existing docs. Ensure bidirectional linking.
+Add the new doc to the `related:` list of 1-2 topically close docs (and list
+them in this doc's `related:`) — the validator checks bidirectionality.
+
+### 4. Optionally regenerate skills
+
+If the project uses generated context skills, run
+`python3 scripts/generate_skills.py` so the new doc gets its
+auto-triggering skill adapter.
 
 ---
 
@@ -290,15 +309,16 @@ Add the new doc to the References → Related Context Docs section of 1-2 topica
 
 After creating the doc and updating registrations:
 
-- [ ] **Metadata**: HTML comment on line 1 with today's date: `<!-- v1 | last-verified: {date} -->`
+- [ ] **Front-matter**: complete YAML block — subsystem, description, keywords, files, priority, version, last-verified with today's date
+- [ ] **Files verified**: every `files:` entry exists (exact path) or matches ≥1 file (directory prefix)
 - [ ] **Overview**: 1-3 sentence overview immediately after the title
 - [ ] **Tables**: All structured data in tables, not bullet lists
 - [ ] **Flows**: Compact chains (`A → B → C`) or numbered steps, no box-drawing art
 - [ ] **Code blocks**: Language hints, ≤20 lines each
 - [ ] **Key Files**: Table with verified relative paths
 - [ ] **References**: Source Files + Related Context Docs sections present
-- [ ] **Cross-references**: At least 1-2 existing docs updated with bidirectional links
-- [ ] **SUBSYSTEMS**: server.py updated with the new doc's path
+- [ ] **Cross-references**: `related:` bidirectional with 1-2 existing docs
+- [ ] **Index check**: doc appears in `get_index_status()` / `--print-index` with no warnings
 - [ ] **Filename**: Kebab-case, matches the topic
 - [ ] **Line count**: Compact 150-250, standard 300-500, comprehensive 600-1000+
 - [ ] **Blueprint marks**: "(planned)" or "(future)" tags on unimplemented sections
