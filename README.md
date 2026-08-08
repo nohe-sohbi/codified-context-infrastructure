@@ -4,16 +4,30 @@
 
 [![CI](https://github.com/nohe-sohbi/codified-context-infrastructure/actions/workflows/ci.yml/badge.svg)](https://github.com/nohe-sohbi/codified-context-infrastructure/actions/workflows/ci.yml) · MIT · Companion to [arXiv:2602.20478](https://arxiv.org/abs/2602.20478)
 
-AI coding agents have broad programming knowledge and zero project memory. Every session starts from scratch: conventions forgotten, hard-won bug fixes re-learned, the same mistakes repeated. One instructions file fixes that on a small repo — past ~20k lines it stops scaling.
+## Get started (2 minutes)
 
-**codified-context** turns your project's knowledge into plain markdown files that load themselves at exactly the right moment, and stay true as the code changes. It ships as an installable Claude Code plugin and a portable toolkit for any [AGENTS.md](https://agents.md) harness.
+In Claude Code:
 
 ```
 /plugin marketplace add nohe-sohbi/codified-context-infrastructure
 /plugin install codified-context@codified-context-marketplace
 ```
 
-Then, in your project, run **`/codified-context:init`** — it detects what already exists (an existing CLAUDE.md is never touched), creates the constitution only if missing, and **backfills context docs for your most critical subsystems** so the plugin is useful from the first session. The AI writes the docs — you approve the list and review.
+Then, **in the project you want to equip**:
+
+```
+/codified-context:init
+```
+
+That's it. `init` detects what already exists (an existing `CLAUDE.md` is never touched), creates a constitution only if missing, then proposes your ~5 most critical subsystems and writes their context docs — you approve the list and review. One session, and your agent has a memory.
+
+Only prerequisite: `python3` 3.10+ (the MCP server provisions its own SDK on first run). Not on Claude Code? See [Manual setup](#manual-setup-any-harness).
+
+## Why
+
+AI coding agents have broad programming knowledge and zero project memory. Every session starts from scratch: conventions forgotten, hard-won bug fixes re-learned, the same mistakes repeated. One instructions file fixes that on a small repo — past ~20k lines it stops scaling.
+
+**codified-context** turns your project's knowledge into plain markdown files that load themselves at exactly the right moment, and stay true as the code changes. Claude Code plugin first-class; the knowledge files are portable to any [AGENTS.md](https://agents.md) harness.
 
 ## How it works
 
@@ -64,18 +78,11 @@ The architecture is from *"Codified Context: Infrastructure for AI Agents in a C
 
 This repository is a modernized overhaul of the paper's companion framework: single-source front-matter index, auto-loading skills, session-end drift detection, installable plugin, test suite and CI.
 
-## Quick Start
+## What the plugin installs
 
-### As a Claude Code Plugin (Recommended)
+Three factory agents (`constitution-factory`, `context-factory`, `agent-factory`), the `codified-context` skill and the **`/codified-context:init`** command, the index-driven `context-retrieval` MCP server (it provisions the `mcp` SDK into a private venv on first serve, see `mcp-server/README.md`), and the drift-detection hooks. After `init`, sanity-check with the `get_index_status()` MCP tool — it must report **your** project's root.
 
-```
-/plugin marketplace add nohe-sohbi/codified-context-infrastructure
-/plugin install codified-context@codified-context-marketplace
-```
-
-This installs the three factory agents, the `codified-context` skill, the **`/codified-context:init`** command, the index-driven `context-retrieval` MCP server (requires `python3` 3.10+; it provisions the `mcp` SDK into a private venv on first serve, see `mcp-server/README.md`), and the drift-detection hooks. Then run `/codified-context:init` — it ends by calling `get_index_status()`, which must report **your** project's root.
-
-### Manual Setup (any harness)
+## Manual setup (any harness)
 
 1. **Factories** — Copy `agents/*.md` into your project's `.claude/agents/` and let your assistant bootstrap (start with `constitution-factory`)
 2. **Context documents** — Create `.claude/context/{topic}.md` files with YAML front-matter (see `tests/fixtures/demo-project/` for the format, `case-study/context-docs/` for real-world content)
