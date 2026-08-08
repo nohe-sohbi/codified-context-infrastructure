@@ -69,7 +69,7 @@ def test_cli_modes_never_bootstrap(fixture_project, tmp_path):
     subprocess.run([sys.executable, "-m", "venv", str(nomcp)], check=True, capture_output=True)
     cache = tmp_path / "cache"
     out = subprocess.run(
-        [str(nomcp / "bin" / "python"), str(SERVER),
+        [str(venv_python(nomcp)), str(SERVER),
          "--print-index", "--project-root", str(fixture_project)],
         capture_output=True, text=True, timeout=120,
         env={**os.environ, "XDG_CACHE_HOME": str(cache)},
@@ -83,7 +83,7 @@ def test_serving_without_sdk_and_without_bootstrap_is_explicit(tmp_path):
     nomcp = tmp_path / "nomcp"
     subprocess.run([sys.executable, "-m", "venv", str(nomcp)], check=True, capture_output=True)
     out = subprocess.run(
-        [str(nomcp / "bin" / "python"), str(SERVER)],
+        [str(venv_python(nomcp)), str(SERVER)],
         capture_output=True, text=True, timeout=120, stdin=subprocess.DEVNULL,
         env={**os.environ, NO_BOOTSTRAP: "1", "XDG_CACHE_HOME": str(tmp_path / "cache")},
     )

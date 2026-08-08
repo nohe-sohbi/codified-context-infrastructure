@@ -63,8 +63,12 @@ def test_hostile_docs_warn_but_never_crash(fixture_project, tmp_path):
     # Non-UTF8 doc
     (ctx / "latin1.md").write_bytes(b"---\nsubsystem: latin\n---\n# Caf\xe9\n")
     # Unicode "digit" scalar that would crash int()
+    # encoding is explicit: the default is locale-dependent, and a Windows
+    # runner would write cp1252 bytes the UTF-8 reader then rejects — the doc
+    # would be skipped as unreadable and this test would assert the wrong thing.
     (ctx / "unicode.md").write_text(
-        "---\nsubsystem: unicode-doc\ndescription: ok\nversion: ²\n---\n# U\n"
+        "---\nsubsystem: unicode-doc\ndescription: ok\nversion: ²\n---\n# U\n",
+        encoding="utf-8",
     )
     index = Index(project)  # must not raise
     assert "unicode-doc" in index.subsystems
