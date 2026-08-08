@@ -1,62 +1,105 @@
-# Codified Context: Infrastructure for AI Agents in a Complex Codebase
+# codified-context
 
-A *codified context infrastructure* — structured, machine-readable project knowledge that AI coding agents depend on to maintain coherence across sessions, follow conventions, and avoid repeating mistakes.
+**Your coding agent forgets everything. Give it a memory it can trust.**
 
-Companion repository to: *"Codified Context: Infrastructure for AI Agents in a Complex Codebase"* by Aris Vasilopoulos ([arXiv:2602.20478](https://arxiv.org/abs/2602.20478)).
+[![CI](https://github.com/nohe-sohbi/codified-context-infrastructure/actions/workflows/ci.yml/badge.svg)](https://github.com/nohe-sohbi/codified-context-infrastructure/actions/workflows/ci.yml) · MIT · Companion to [arXiv:2602.20478](https://arxiv.org/abs/2602.20478)
 
-## The Problem
+AI coding agents have broad programming knowledge and zero project memory. Every session starts from scratch: conventions forgotten, hard-won bug fixes re-learned, the same mistakes repeated. One instructions file fixes that on a small repo — past ~20k lines it stops scaling.
 
-LLM-based coding agents lack persistent memory: each session begins without awareness of prior sessions, established conventions, or past mistakes. Single-file manifests (`.cursorrules`, `CLAUDE.md`) help with small projects, but they do not scale beyond modest codebases — a 1,000-line prototype can be fully described in a single prompt, but a 100,000-line system cannot. Without structured knowledge transfer, agents on large projects:
-- Forget architectural conventions and repeat known mistakes
-- Lose context about subsystem interactions across files
-- Require lengthy re-explanations of project structure
-- Make inconsistent decisions that drift from established patterns
-
-## The Solution: Three-Tier Context Infrastructure
+**codified-context** turns your project's knowledge into plain markdown files that load themselves at exactly the right moment, and stay true as the code changes. It ships as an installable Claude Code plugin and a portable toolkit for any [AGENTS.md](https://agents.md) harness.
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│  Tier 1: CONSTITUTION (Hot Memory — always loaded)          │
-│  ┌───────────────────────────────────────────────────────┐  │
-│  │ CLAUDE.md                                             │  │
-│  │ • Conventions, build commands, naming standards       │  │
-│  │ • System registration checklists                      │  │
-│  │ • Agent trigger table (when to invoke which agent)    │  │
-│  │ • Key file reference map                              │  │
-│  └───────────────────────────────────────────────────────┘  │
-├─────────────────────────────────────────────────────────────┤
-│  Tier 2: SPECIALIZED AGENTS                                 │
-│  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌──────────┐      │
-│  │ Code     │ │ Network  │ │ Debug    │ │ UI/UX    │      │
-│  │ Reviewer │ │ Protocol │ │ Profiler │ │ Designer │  ... │
-│  └──────────┘ └──────────┘ └──────────┘ └──────────┘      │
-│  Domain experts with focused prompts + context access       │
-├─────────────────────────────────────────────────────────────┤
-│  Tier 3: KNOWLEDGE BASE + RETRIEVAL (Cold Memory)           │
-│  ┌──────────────────────┐  ┌──────────────────────────┐    │
-│  │ .claude/context/*.md │  │ MCP Retrieval Service     │    │
-│  │ • Subsystem specs    │  │ • list_subsystems()       │    │
-│  │ • Architecture docs  │  │ • find_relevant_context()  │    │
-│  │ • Protocol docs      │  │ • search_context_docs()    │    │
-│  │ • Pattern guides     │  │ • suggest_agent()          │    │
-│  │                      │  │ • + 3 more (see mcp-server)│    │
-│  └──────────────────────┘  └────────────────────────────┘   │
-└─────────────────────────────────────────────────────────────┘
+/plugin marketplace add nohe-sohbi/codified-context-infrastructure
+/plugin install codified-context@codified-context-marketplace
 ```
 
-**Tier 1** (hot memory) is loaded into every agent session automatically. It contains project conventions, checklists, and orchestration protocols that route tasks to specialized agents.
+Then, in your project: *"Use the codified-context skill and set up this project."* The AI writes the docs — you answer 3 questions and review.
 
-**Tier 2** consists of specialized agents — domain-expert personas with focused prompts and embedded project knowledge. They are invoked automatically based on trigger conditions in the constitution.
+## How it works
 
-**Tier 3** (cold memory) contains detailed specification documents loaded on demand. An MCP retrieval service maps tasks to relevant files, so agents only load what they need.
+Knowledge is split by loading frequency — a memory hierarchy, like your CPU has — plus a guardian that keeps all of it honest:
 
-## Key Findings (from the Paper)
+| Tier | Artifact | Loading |
+|------|----------|---------|
+| **1 — Constitution** | `AGENTS.md` (canonical, read natively by ~30 harnesses) + `CLAUDE.md` shim (`@AGENTS.md`) | Every session |
+| **2 — Specialist agents** | `.claude/agents/{name}.md` — domain experts with embedded project knowledge, routed by `triggers:` | Per task |
+| **3 — Knowledge base** | `.claude/context/{topic}.md` — one deep spec per subsystem, served via MCP retrieval + auto-loading skills | On demand |
+| **Drift guardian** | `hooks/drift_*.py` — compares code changes against specs, asks for updates while context is hot | Every session |
+
+**One block of YAML runs everything.** Each context doc declares its own metadata; the MCP server, the auto-loading skills, the drift hooks, the reference tables and the validator all derive from that same index — there is no registry to maintain, and the index rebuilds live when files change:
+
+```yaml
+---
+subsystem: save-system
+description: Two-tier save architecture (disk + memory)   # powers retrieval
+keywords: [save, persistence, autosave]
+files:                                                    # auto-loads on touch
+  - src/services/save_service.py
+  - src/services/                                         # trailing slash = directory
+priority: high                                            # drift-warning tier
+related: [item-system]
+last-verified: 2026-08-08
+---
+```
+
+**Stale docs are worse than no docs** — agents trust them blindly. When you change `save_service.py` without touching its spec, the session-end hook says so and asks for targeted deltas while everything is still fresh. That drift loop is what turns "documentation" into "memory".
+
+## What actually changes for you
+
+- **Your prompts shrink.** "Add an ice nova ability" is enough — conventions, file map and known pitfalls are already in context. In the original study, 80% of prompts were under 100 words.
+- **The AI writes and maintains the docs**, under your review, with a detector telling you when and what.
+- **Cheap models become viable** for mechanical tasks covered by a good spec — the spec compensates for the model. Keep your strongest model for architecture and debugging.
+- **One rule of thumb:** if you've explained something to the AI twice, codify it. Never write docs speculatively.
+
+## Where this comes from
+
+The architecture is from *"Codified Context: Infrastructure for AI Agents in a Complex Codebase"* ([arXiv:2602.20478](https://arxiv.org/abs/2602.20478), Vasilopoulos 2026): a 108,000-line C# multiplayer game built in 70 part-time days with AI as the sole code generator, on ~26,000 lines of codified knowledge.
 
 | Metric | Value |
 |--------|-------|
 | Knowledge-to-code ratio | ~24% (1 line of documentation per 4 lines of code) |
 | Context infrastructure | ~26,000 lines across constitution + 34 specs + 19 agents |
 | Agent amplification | 2,801 prompts → 1,197 agent invocations → 16,522 agent turns |
+| Coordination proof | 74 sessions used the save-system spec — zero persistence bugs |
+
+This repository is a modernized overhaul of the paper's companion framework: single-source front-matter index, auto-loading skills, session-end drift detection, installable plugin, test suite and CI.
+
+## Quick Start
+
+### As a Claude Code Plugin (Recommended)
+
+```
+/plugin marketplace add nohe-sohbi/codified-context-infrastructure
+/plugin install codified-context@codified-context-marketplace
+```
+
+This installs the three factory agents, the `codified-context` skill, the index-driven `context-retrieval` MCP server (requires `python3` + `pip install mcp`), and the drift-detection hooks. After setup, call the `get_index_status()` MCP tool — it must report **your** project's root.
+
+### Manual Setup (any harness)
+
+1. **Factories** — Copy `agents/*.md` into your project's `.claude/agents/` and let your assistant bootstrap (start with `constitution-factory`)
+2. **Context documents** — Create `.claude/context/{topic}.md` files with YAML front-matter (see `tests/fixtures/demo-project/` for the format, `case-study/context-docs/` for real-world content)
+3. **Agent specs** — Create `.claude/agents/{name}.md` files with front-matter incl. `triggers:`
+4. **MCP server** — Copy `mcp-server/`, `pip install -e .` — it indexes your front-matter automatically (see `mcp-server/README.md`)
+5. **Scripts** — Copy `scripts/` (generators + validator); keep `scripts/`, `hooks/` and `mcp-server/` as siblings — they import the shared index by relative path
+6. **Drift detection** — Copy `hooks/`; note `hooks/hooks.json` is written for plugin installs (`${CLAUDE_PLUGIN_ROOT}`) — manual installs adapt the `$CLAUDE_PROJECT_DIR` variant shown in `quickstart/README.md`
+
+See `quickstart/README.md` for the full bootstrapping sequence and the front-matter contract.
+
+> **Layout note:** the recommended layout is flat — `.claude/agents/{name}.md` and `.claude/context/{topic}.md`. The legacy nested `.claude/agents/{id}/AGENT.md` layout remains discovered for backward compatibility. Hooks and plugin MCP config invoke `python3` (macOS/Linux convention); on native Windows, adapt the commands to your Python launcher.
+
+## Harness & Model Compatibility
+
+The knowledge artifacts are plain markdown with YAML front-matter — portable by construction. What each harness can consume:
+
+| Capability | Claude Code | pi / Codex / Gemini CLI | Cursor | Any CI/shell |
+|---|---|---|---|---|
+| Constitution | `CLAUDE.md` shim (`@AGENTS.md`) | `AGENTS.md` natively | `AGENTS.md` natively | — |
+| Context docs (Tier 3) | MCP tools + generated `ctx-*` skills (auto-load by `paths:`) | MCP server (`.mcp.json`-style config) or `--print-index` JSON | MCP server | `--print-index` JSON |
+| Specialized agents (Tier 2) | `.claude/agents/*.md` subagents | Convert front-matter to the tool's persona format | Rules/modes | — |
+| Drift detection | SessionStart + Stop hooks | Run `hooks/drift_check.py` manually or via the tool's hook system | — | `validate_architecture.py` + `drift_check.py` in CI |
+
+**Model routing intent** (encode it in your constitution; map per harness): judgment-heavy work — architecture, debugging, cross-cutting review — to your strongest model; pattern-following work *covered by a spec* to fast/economical models. Rich context docs are what make the cheaper tier viable: the spec compensates for the model.
 
 ## Paper-to-Repo Mapping
 
@@ -95,10 +138,11 @@ scripts/                Generators and validation
   validate_architecture.py    Cross-reference and front-matter validation
 
 tests/                  Pytest suite + fixtures/demo-project (living format example)
+.github/workflows/      CI (Linux py3.10/3.12 + MCP SDK v1/v2 + Windows)
 quickstart/             Setup guide (plugin install + manual copy)
 
 case-study/             FROZEN verbatim artifacts from the paper's project
-  CLAUDE.md                   The actual constitution (~660 lines, sanitized)
+  CLAUDE.md                   The actual constitution (679 lines, sanitized)
   context-docs/               5 representative knowledge base documents
   agent-specs/                5 real agent specifications
   mcp-server/                 The original dict-based MCP server
@@ -109,62 +153,20 @@ paper/                  Paper reference, abstract, and citation
 docs/                   Analysis and perspectives (2026 research/tooling watch)
 ```
 
-> **Note:** The `case-study/` directory mirrors what would live under `.claude/` in a real project. The recommended production layout is `.claude/agents/{id}/AGENT.md` for agent specs and `.claude/context/{topic}.md` for knowledge base documents.
-
-## Quick Start
-
-### As a Claude Code Plugin (Recommended)
-
-```
-/plugin marketplace add nohe-sohbi/codified-context-infrastructure
-/plugin install codified-context@codified-context-marketplace
-```
-
-This installs the three factory agents, the `codified-context` skill, the index-driven `context-retrieval` MCP server (requires `python3` + `pip install mcp`), and the drift-detection hooks. Then, in your project:
-
-> *"Use the codified-context skill and help me set up the context infrastructure for this project."*
-
-### Manual Setup (any harness)
-
-1. **Factories** — Copy `agents/*.md` into your project's `.claude/agents/` and let your assistant bootstrap (start with `constitution-factory`)
-2. **Context documents** — Create `.claude/context/{topic}.md` files with YAML front-matter (see `tests/fixtures/demo-project/` for the format, `case-study/context-docs/` for real-world content)
-3. **Agent specs** — Create `.claude/agents/{name}.md` files with front-matter incl. `triggers:`
-4. **MCP server** — Copy `mcp-server/`, `pip install -e .` — it indexes your front-matter automatically (see `mcp-server/README.md`)
-5. **Drift detection** — Copy `hooks/` (keep it a sibling of `mcp-server/`) and wire `hooks.json` into your settings
-
-See `quickstart/README.md` for the full bootstrapping sequence and the front-matter contract.
-
-## Harness & Model Compatibility
-
-The knowledge artifacts are plain markdown with YAML front-matter — portable by construction. What each harness can consume:
-
-| Capability | Claude Code | pi / Codex / Gemini CLI | Cursor | Any CI/shell |
-|---|---|---|---|---|
-| Constitution | `CLAUDE.md` shim (`@AGENTS.md`) | `AGENTS.md` natively | `AGENTS.md` natively | — |
-| Context docs (Tier 3) | MCP tools + generated `ctx-*` skills (auto-load by `paths:`) | MCP server (`.mcp.json`-style config) or `--print-index` JSON | MCP server | `--print-index` JSON |
-| Specialized agents (Tier 2) | `.claude/agents/*.md` subagents | Convert front-matter to the tool's persona format | Rules/modes | — |
-| Drift detection | SessionStart + Stop hooks | Run `hooks/drift_check.py` manually or via the tool's hook system | — | `validate_architecture.py` + `drift_check.py` in CI |
-
-**Model routing intent** (encode it in your constitution; map per harness): judgment-heavy work — architecture, debugging, cross-cutting review — to your strongest model; pattern-following work *covered by a spec* to fast/economical models. Rich context docs are what make the cheaper tier viable: the spec compensates for the model.
-
 ## Design Principles
 
-1. **Documentation as infrastructure.** Context documents are load-bearing artifacts that AI agents depend on to produce correct output — living specifications, not passive reference material. When a specification goes stale, agents generate code based on outdated information.
-
-2. **Written for AI, not humans.** Context documents use tables, code blocks, and explicit patterns rather than prose. Agents parse structured content more reliably than natural language descriptions.
-
-3. **Hot/cold memory separation.** The constitution (hot memory) is always present. Specifications (cold memory) are loaded on demand via MCP retrieval. This keeps token usage efficient while making deep context available when needed.
-
-4. **Cross-referenced and validated.** The constitution references context docs, context docs reference source files, and the MCP server indexes both. A validation script checks all cross-references on every session start.
-
-5. **Iteratively grown, not designed upfront.** The infrastructure emerged from real development needs. Documents were created when agents made mistakes, not as a planning exercise. Start small and add context as patterns emerge.
-
-6. **Agents as domain experts.** Specialized agents carry focused prompts and embedded domain knowledge, invoked automatically by trigger conditions. A code reviewer is invoked after every system modification; a network specialist is invoked for any sync-related work.
+1. **Documentation as infrastructure.** Context documents are load-bearing artifacts that AI agents depend on to produce correct output — living specifications, not passive reference material.
+2. **Written for AI, not humans.** Tables, code blocks, and explicit patterns rather than prose. Agents parse structured content more reliably than natural language descriptions.
+3. **Hot/cold memory separation.** The constitution is always present; specifications load on demand. Token-efficient, depth available when needed.
+4. **Single source of truth.** Front-matter is the registration; everything else — index, skills, tables, drift checks — is derived and regenerated, never hand-maintained.
+5. **Iteratively grown, not designed upfront.** Documents were created when agents made mistakes, not as a planning exercise. Start small and add context as patterns emerge.
+6. **Freshness is enforced, not hoped for.** Drift detection runs at session start and session end; stale specs are the failure mode the whole design guards against.
 
 ## Links
 
-- **Paper:** [arXiv:2602.20478](https://arxiv.org/abs/2602.20478)
-- **Author:** [Aris Vasilopoulos](https://github.com/arisvas4)
+- **Paper:** [arXiv:2602.20478](https://arxiv.org/abs/2602.20478) — *Codified Context: Infrastructure for AI Agents in a Complex Codebase*, Aris Vasilopoulos
+- **Original companion repo:** [arisvas4/codified-context-infrastructure](https://github.com/arisvas4/codified-context-infrastructure)
+- **Research & tooling watch (2026):** [`docs/analyse-et-perspectives-2026.md`](docs/analyse-et-perspectives-2026.md) · [`docs/grille-facteurs-comprehension.md`](docs/grille-facteurs-comprehension.md)
 
 ## License
 
