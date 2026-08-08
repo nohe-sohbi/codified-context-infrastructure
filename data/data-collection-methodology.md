@@ -196,6 +196,8 @@ All scripts and data files are in the companion repository:
 | `extract_prompts.py` | Extract prompts from JSONL → `prompts.csv`, `agent_prompts.csv` |
 | `reconstruct_sessions.py` | Reconstruct gap period from todos/git/shell → merge into `prompts.csv` |
 | `build_unified_csv.py` | Merge git historical versions + current → `prompts_unified.csv` |
+
+> *Note: `build_unified_csv.py`, `compare_pre_post_agents.py`, `correlate_plans.py` and `find_key_plans.py` were not published in this repository; the published equivalents are `extract_prompts.py`, `reconstruct_sessions.py`, `analyze_impact.py` and `extract_session_aggregates.py`.*
 | `analyze_impact.py` | Pre/post agent comparison analysis |
 | `compare_pre_post_agents.py` | Detailed pre/post comparison with breakdowns |
 | `correlate_plans.py` | Correlate planning sessions to outcomes |

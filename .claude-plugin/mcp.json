@@ -1,0 +1,10 @@
+{
+  "mcpServers": {
+    "context-retrieval": {
+      "type": "stdio",
+      "command": "python3",
+      "args": ["${CLAUDE_PLUGIN_ROOT}/mcp-server/context_retrieval_mcp/server.py"],
+      "env": {}
+    }
+  }
+}

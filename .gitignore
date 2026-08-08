@@ -21,4 +21,6 @@ texput.log
 
 # Manuscript (local working copy, not distributed with repo)
 Manuscript/
-.claude
+
+# Local Claude Code state at repo root only (NOT nested — tests/fixtures ship .claude/ trees)
+/.claude/
