@@ -59,7 +59,7 @@ Each tier builds on the previous one. **Do not design everything upfront** — g
 
 | Phase | What | When |
 |-------|------|------|
-| 1 | `constitution-factory` → `AGENTS.md` + `CLAUDE.md` shim | Day 1 — even a minimal constitution helps |
+| 1 | `constitution-factory` → your constitution (`CLAUDE.md` if all your tools read it; `AGENTS.md` + shim only when your toolset needs it) | Day 1 — even a minimal constitution helps |
 | 2 | MCP server + `get_index_status()` check | Once there is enough code to index |
 | 3 | `context-factory` → `.claude/context/{topic}.md` per subsystem | When a subsystem outgrows its constitution breadcrumb |
 | 4 | `agent-factory` → `.claude/agents/{name}.md` | When a domain has recurring failure modes |
