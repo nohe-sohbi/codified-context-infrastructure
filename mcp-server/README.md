@@ -28,7 +28,7 @@ The first 5 tools implement **context retrieval** — they let the AI agent find
 │  └──────────────┬───────────────────────┘   │
 │                 │ MCP tool call              │
 │  ┌──────────────▼───────────────────────┐   │
-│  │  Context Retrieval MCP Server                 │   │
+│  │  Context Retrieval MCP Server        │   │
 │  │  ┌─────────────────────────────────┐ │   │
 │  │  │  SUBSYSTEMS dict (the index)    │ │   │
 │  │  │  - keywords per subsystem       │ │   │
@@ -63,7 +63,7 @@ SUBSYSTEMS = {
             ".claude/context/coordinate-systems.md",
         ],
     },
-    # ... ~20 subsystems
+    # ... 25 subsystems in the case study data
 }
 ```
 
@@ -80,7 +80,7 @@ AGENTS = {
         "triggers": ["camera", "isometric", "world-to-screen", ...],
         "model": "opus",
     },
-    # ... 19 agents in the case study
+    # ... 17 agents in the case study data (the paper's project had 19)
 }
 ```
 
@@ -98,6 +98,22 @@ AGENTS = {
 pip install -e .
 ```
 
+### Running
+
+Three equivalent launch modes are supported:
+
+```bash
+context-retrieval-mcp                                  # console script (after pip install)
+python -m context_retrieval_mcp                        # module mode (after pip install)
+python3 context_retrieval_mcp/server.py                # direct run (no install needed, only `pip install mcp`)
+```
+
+Smoke test / JSON escape hatch for non-MCP consumers (pi.dev tooling, debugging):
+
+```bash
+context-retrieval-mcp --print-index
+```
+
 ### Claude Code Integration
 
 Add to your project's `.mcp.json` (at project root):
@@ -106,13 +122,14 @@ Add to your project's `.mcp.json` (at project root):
 {
   "mcpServers": {
     "context-retrieval": {
+      "type": "stdio",
       "command": "context-retrieval-mcp"
     }
   }
 }
 ```
 
-This uses the script entry point installed by `pip install -e .`. Alternatively, you can use `python -m` with the `cwd` option pointing to the installed package directory.
+This uses the script entry point installed by `pip install -e .`. Alternatively, use the direct-run mode with `"command": "python3", "args": ["<path>/context_retrieval_mcp/server.py"]`.
 
 ### Path Configuration
 
@@ -155,11 +172,13 @@ The constitution (CLAUDE.md) instructs the AI agent to call MCP tools *first* wh
 
 ```
 mcp-server/
-├── server.py        # Main server (~1,600 lines, mostly data)
-├── pyproject.toml   # Package configuration
-├── __init__.py      # Package exports
-├── __main__.py      # Entry point
-└── README.md        # This file
+├── pyproject.toml                # Package configuration
+├── README.md                     # This file
+└── context_retrieval_mcp/
+    ├── __init__.py               # Package exports (mcp, main)
+    ├── __main__.py               # python -m entry point
+    ├── matching.py               # Unified keyword/trigger scoring (stdlib-only)
+    └── server.py                 # Main server (~1,600 lines, mostly data)
 ```
 
-The server is intentionally a single file. The SUBSYSTEMS and AGENTS dicts are large but serve as a readable, grep-able index that's easy to maintain alongside the codebase.
+The SUBSYSTEMS and AGENTS dicts are large but serve as a readable, grep-able index that's easy to maintain alongside the codebase.

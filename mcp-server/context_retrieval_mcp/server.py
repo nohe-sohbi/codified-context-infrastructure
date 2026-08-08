@@ -56,10 +56,23 @@ Provides context discovery for Claude Code to find relevant
 project architecture and files when starting new tasks.
 """
 
+import argparse
+import json
 import logging
-import re
+import sys
 from pathlib import Path
-from mcp.server.fastmcp import FastMCP
+
+try:  # MCP SDK v2 (mcp>=2.0): same decorator surface, new location/name
+    from mcp.server.mcpserver import MCPServer as FastMCP
+except ImportError:  # MCP SDK v1
+    from mcp.server.fastmcp import FastMCP
+
+try:  # package mode (pip install / python -m)
+    from .matching import tokenize, term_counts, score_terms, description_bonus
+except ImportError:  # direct-run mode (python3 server.py)
+    from matching import tokenize, term_counts, score_terms, description_bonus
+
+VERSION = "0.2.0"
 
 # Suppress verbose MCP logging
 logging.getLogger("mcp").setLevel(logging.ERROR)
@@ -71,6 +84,14 @@ CONTEXT_DIR = PROJECT_ROOT / ".claude" / "context"
 
 # Create the FastMCP server
 mcp = FastMCP("Context Retrieval")
+
+
+def _project_path(f: str) -> str:
+    """Prefix source files with the engine root; context docs are already
+    project-root-relative and must NOT be prefixed."""
+    if f.startswith(".claude/"):
+        return f
+    return f"GameProject/src/GameProject.Engine/{f}"
 
 
 # =============================================================================
@@ -1323,40 +1344,17 @@ def suggest_agent(task_description: str) -> dict:
         Dictionary with recommended agent(s), matched triggers, and confidence
     """
     task_lower = task_description.lower()
-    task_words = set(re.findall(r'\b\w+\b', task_lower))
+    task_words = tokenize(task_description)
     matches = []
 
     # Precompute trigger uniqueness: triggers in fewer agents are more informative
-    trigger_agent_count: dict[str, int] = {}
-    for info in AGENTS.values():
-        for t in info["triggers"]:
-            trigger_agent_count[t] = trigger_agent_count.get(t, 0) + 1
+    trigger_agent_count = term_counts(info["triggers"] for info in AGENTS.values())
 
     for agent_id, info in AGENTS.items():
-        score = 0.0
-        matched_triggers = []
-
-        for trigger in info["triggers"]:
-            trigger_words = trigger.split()
-            matched = False
-            if len(trigger_words) == 1:
-                # Single-word: exact word boundary match (not substring)
-                matched = trigger in task_words
-            else:
-                # Multi-word phrase: check as substring (word order matters)
-                matched = trigger in task_lower
-
-            if matched:
-                # Base score: multi-word triggers worth more
-                base = len(trigger_words)
-                # Uniqueness bonus: triggers in fewer agents score higher
-                uniqueness = 1.0 / trigger_agent_count.get(trigger, 1)
-                score += base * (1.0 + uniqueness)
-                matched_triggers.append(trigger)
-
-        # Also check description (weak signal)
-        if any(word in info["description"].lower() for word in task_words if len(word) > 3):
-            score += 0.5
+        score, matched_triggers = score_terms(
+            task_lower, task_words, info["triggers"], trigger_agent_count
+        )
+        score += description_bonus(task_words, info["description"])
 
         if score > 0:
             matches.append({
@@ -1446,13 +1444,12 @@ def get_files_for_subsystem(subsystem: str) -> dict:
         }
 
     info = SUBSYSTEMS[subsystem]
-    base_path = "GameProject/src/GameProject.Engine"
 
     return {
         "subsystem": subsystem,
         "name": info["name"],
         "description": info["description"],
-        "files": [f"{base_path}/{f}" for f in info["files"]],
+        "files": [_project_path(f) for f in info["files"]],
     }
 
 
@@ -1468,17 +1465,17 @@ def find_relevant_context(task_description: str) -> dict:
         Dictionary with relevant subsystems and suggested files
     """
     task_lower = task_description.lower()
+    task_words = tokenize(task_description)
+
+    # Keyword uniqueness across subsystems (same philosophy as suggest_agent)
+    keyword_counts = term_counts(info["keywords"] for info in SUBSYSTEMS.values())
 
     # Score each subsystem based on keyword matches
     matches = []
     for key, info in SUBSYSTEMS.items():
-        score = 0
-        matched_keywords = []
-
-        for keyword in info["keywords"]:
-            if keyword in task_lower:
-                score += 1
-                matched_keywords.append(keyword)
+        score, matched_keywords = score_terms(
+            task_lower, task_words, info["keywords"], keyword_counts
+        )
 
         # Also check name and description
         if info["name"].lower() in task_lower:
@@ -1497,11 +1494,10 @@ def find_relevant_context(task_description: str) -> dict:
     matches.sort(key=lambda x: x["score"], reverse=True)
 
     # Build file list from top matches
-    base_path = "GameProject/src/GameProject.Engine"
     suggested_files = []
     for match in matches[:3]:  # Top 3 matches
         for f in match["files"]:
-            full_path = f"{base_path}/{f}"
+            full_path = _project_path(f)
             if full_path not in suggested_files:
                 suggested_files.append(full_path)
 
@@ -1648,7 +1644,41 @@ def search_context_documents(query: str) -> dict:
 # =============================================================================
 
 def main():
-    """Run the MCP server."""
+    """CLI entry point: run the MCP server, or inspect the index."""
+    parser = argparse.ArgumentParser(
+        prog="context-retrieval-mcp",
+        description="Context Retrieval MCP server (codified context infrastructure).",
+    )
+    parser.add_argument(
+        "--print-index",
+        action="store_true",
+        help="Dump the resolved SUBSYSTEMS/AGENTS index as JSON and exit "
+             "(smoke test and escape hatch for non-MCP consumers).",
+    )
+    parser.add_argument("--version", action="store_true", help="Print version and exit.")
+    args = parser.parse_args()
+
+    if args.version:
+        print(VERSION)
+        return
+    if args.print_index:
+        try:
+            json.dump(
+                {
+                    "version": VERSION,
+                    "project_root": str(PROJECT_ROOT),
+                    "context_dir": str(CONTEXT_DIR),
+                    "subsystems": SUBSYSTEMS,
+                    "agents": AGENTS,
+                },
+                sys.stdout,
+                indent=2,
+            )
+            print()
+        except BrokenPipeError:  # e.g. piped into `head`
+            sys.stderr.close()
+        return
+
     mcp.run(transport="stdio")
 
 
