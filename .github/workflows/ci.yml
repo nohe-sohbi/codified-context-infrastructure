@@ -52,6 +52,16 @@ jobs:
           python -m venv /tmp/nomcp
           /tmp/nomcp/bin/python mcp-server/context_retrieval_mcp/server.py --print-index --project-root tests/fixtures/demo-project > /dev/null
 
+      - name: Serving bootstraps the mcp SDK (plugin install has no dependency step)
+        run: |
+          printf '%s\n%s\n' \
+            '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"ci","version":"0"}}}' \
+            '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
+            | XDG_CACHE_HOME=/tmp/bootcache timeout 180 /tmp/nomcp/bin/python \
+                mcp-server/context_retrieval_mcp/server.py > /tmp/handshake.json
+          grep -q '"serverInfo"' /tmp/handshake.json
+          test -x /tmp/bootcache/codified-context-mcp/venv/bin/python
+
       - name: Validate fixture architecture
         run: python scripts/validate_architecture.py --project-root tests/fixtures/demo-project
 

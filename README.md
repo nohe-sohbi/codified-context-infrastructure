@@ -73,7 +73,7 @@ This repository is a modernized overhaul of the paper's companion framework: sin
 /plugin install codified-context@codified-context-marketplace
 ```
 
-This installs the three factory agents, the `codified-context` skill, the index-driven `context-retrieval` MCP server (requires `python3` + `pip install mcp`), and the drift-detection hooks. After setup, call the `get_index_status()` MCP tool — it must report **your** project's root.
+This installs the three factory agents, the `codified-context` skill, the index-driven `context-retrieval` MCP server (requires `python3` 3.10+; it provisions the `mcp` SDK into a private venv on first serve, see `mcp-server/README.md`), and the drift-detection hooks. After setup, call the `get_index_status()` MCP tool — it must report **your** project's root.
 
 ### Manual Setup (any harness)
 
@@ -86,7 +86,7 @@ This installs the three factory agents, the `codified-context` skill, the index-
 
 See `quickstart/README.md` for the full bootstrapping sequence and the front-matter contract.
 
-> **Layout note:** the recommended layout is flat — `.claude/agents/{name}.md` and `.claude/context/{topic}.md`. The legacy nested `.claude/agents/{id}/AGENT.md` layout remains discovered for backward compatibility. Hooks and plugin MCP config invoke `python3` (macOS/Linux convention); on native Windows, adapt the commands to your Python launcher.
+> **Layout note:** the recommended layout is flat — `.claude/agents/{name}.md` and `.claude/context/{topic}.md`. The legacy nested `.claude/agents/{id}/AGENT.md` layout remains discovered for backward compatibility. Hooks and plugin MCP config invoke `python3` (macOS/Linux convention); on native Windows, adapt the commands to your Python launcher, or point the server at one with `CONTEXT_MCP_PYTHON`.
 
 ## Harness & Model Compatibility
 

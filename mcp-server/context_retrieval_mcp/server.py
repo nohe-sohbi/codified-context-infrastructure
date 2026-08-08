@@ -21,8 +21,9 @@ $CLAUDE_PROJECT_DIR → walk up from cwd to a `.git`/`.claude` marker → cwd.
 Call `get_index_status()` from a session to verify what got indexed.
 
 Launch modes: `context-retrieval-mcp` (console script after pip install),
-`python -m context_retrieval_mcp`, or direct `python3 server.py` (only
-`pip install mcp` needed — this is how the Claude Code plugin runs it).
+`python -m context_retrieval_mcp`, or direct `python3 server.py` (how the
+Claude Code plugin runs it — serving provisions the mcp SDK on its own if the
+interpreter lacks it, see the bootstrap section near `main()`).
 `--print-index` dumps the resolved index as JSON (smoke test + escape
 hatch for non-MCP consumers).
 """
@@ -30,9 +31,13 @@ hatch for non-MCP consumers).
 import argparse
 import json
 import logging
+import os
+import shutil
+import subprocess
 import sys
 from pathlib import Path
 
+SDK_AVAILABLE = True
 try:  # MCP SDK v2 (mcp>=2.0): same decorator surface, new location/name
     from mcp.server.mcpserver import MCPServer as FastMCP
 except ImportError:
@@ -40,7 +45,10 @@ except ImportError:
         from mcp.server.fastmcp import FastMCP
     except ImportError:
         # SDK absent: keep the CLI modes (--print-index, --version) alive —
-        # they only need the stdlib index. Serving requires the real SDK.
+        # they only need the stdlib index. Serving re-execs into an interpreter
+        # that has the SDK (see the bootstrap section near main()).
+        SDK_AVAILABLE = False
+
         class FastMCP:  # type: ignore[no-redef]
             def __init__(self, _name):
                 pass
@@ -401,6 +409,105 @@ def get_subsystem_doc(subsystem: str) -> str:
 
 
 # =============================================================================
+# SDK Bootstrap (serve path only)
+# =============================================================================
+#
+# A Claude Code plugin install is a git clone — no dependency step runs, so
+# `pip install mcp` never happens and the server dies before the JSON-RPC
+# handshake. The client reports that as an opaque -32000. Telling users to run
+# `pip install mcp` does not close the hole either: PEP 668 marks most distro
+# interpreters externally managed and refuses the install. So the serve path
+# provisions its own private venv once and hands over to it.
+#
+# The CLI modes stay stdlib-only: nothing below runs for --print-index/--version.
+
+BOOTSTRAP_GUARD = "CONTEXT_MCP_BOOTSTRAPPED"
+PYTHON_OVERRIDE = "CONTEXT_MCP_PYTHON"
+NO_BOOTSTRAP = "CONTEXT_MCP_NO_BOOTSTRAP"
+
+MANUAL_FIX = (
+    f"Install `mcp>=1.0.0` into an interpreter of your choice and point the "
+    f"server at it with ${PYTHON_OVERRIDE}=/path/to/python."
+)
+
+
+def plan_serve(sdk_available, env):
+    """Decide how to reach an interpreter that can serve. Pure decision.
+
+    Returns (action, detail):
+      ("serve", None)         — this interpreter has the SDK
+      ("reexec", python)      — hand over to `python`
+      ("bootstrap", None)     — provision the private venv, then hand over
+      ("fail", reason)        — give up, `reason` says why
+    """
+    if sdk_available:
+        return ("serve", None)
+    if env.get(BOOTSTRAP_GUARD):
+        return ("fail", f"the mcp SDK is still missing after bootstrap. {MANUAL_FIX}")
+    override = env.get(PYTHON_OVERRIDE)
+    if override:
+        return ("reexec", override)
+    if env.get(NO_BOOTSTRAP):
+        return ("fail", f"the mcp SDK is required to serve and ${NO_BOOTSTRAP} is set. {MANUAL_FIX}")
+    return ("bootstrap", None)
+
+
+def venv_python(venv=None):
+    """Interpreter path inside the private venv (created on first serve)."""
+    if venv is None:
+        cache = os.environ.get("XDG_CACHE_HOME") or Path.home() / ".cache"
+        venv = Path(cache) / "codified-context-mcp" / "venv"
+    return Path(venv) / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
+
+
+def _log(message):
+    # stdout belongs to the stdio transport — provisioning talks on stderr only.
+    print(f"[context-retrieval] {message}", file=sys.stderr, flush=True)
+
+
+def _run(cmd):
+    done = subprocess.run([str(c) for c in cmd], capture_output=True, text=True)
+    if done.returncode != 0:
+        detail = (done.stderr.strip() or done.stdout.strip() or "no output")
+        raise SystemExit(
+            f"[context-retrieval] `{' '.join(str(c) for c in cmd)}` failed:\n"
+            f"{detail}\n{MANUAL_FIX}"
+        )
+
+
+def provision_venv():
+    """Create the private venv and install the SDK into it. Idempotent."""
+    python = venv_python()
+    uv = shutil.which("uv")
+    if not python.exists():
+        _log(f"mcp SDK missing — provisioning {python.parent.parent}")
+        _run([uv, "venv", "--python", sys.executable, python.parent.parent] if uv
+             else [sys.executable, "-m", "venv", python.parent.parent])
+    if subprocess.run([str(python), "-c", "import mcp"], capture_output=True).returncode:
+        _log("installing mcp>=1.0.0")
+        _run([uv, "pip", "install", "--python", python, "mcp>=1.0.0"] if uv
+             else [python, "-m", "pip", "install", "--quiet",
+                   "--disable-pip-version-check", "mcp>=1.0.0"])
+    return python
+
+
+def ensure_serving_sdk():
+    """Serve-path guard: return with the SDK importable, or hand the process over."""
+    action, detail = plan_serve(SDK_AVAILABLE, os.environ)
+    if action == "serve":
+        return
+    if action == "fail":
+        raise SystemExit(f"[context-retrieval] {detail}")
+    python = Path(detail) if action == "reexec" else provision_venv()
+    _log(f"handing over to {python}")
+    os.execve(
+        str(python),
+        [str(python), str(Path(__file__).resolve()), *sys.argv[1:]],
+        {**os.environ, BOOTSTRAP_GUARD: "1"},
+    )
+
+
+# =============================================================================
 # Entry Point
 # =============================================================================
 
@@ -452,6 +559,7 @@ def main():
             sys.stderr.close()
         return
 
+    ensure_serving_sdk()
     mcp.run(transport="stdio")
 
 

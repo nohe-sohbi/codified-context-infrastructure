@@ -52,7 +52,21 @@ Matching uses word-boundary matching for single-word terms (the keyword `ai` doe
 ### Prerequisites
 
 - Python 3.10+
-- `mcp` package (`pip install mcp`) — SDK v1 and v2 both supported
+- `mcp` package — SDK v1 and v2 both supported. A plugin install has no
+  dependency step, so **serving installs it for you**: if the launching
+  interpreter cannot import `mcp`, the server provisions a private venv under
+  `$XDG_CACHE_HOME/codified-context-mcp/venv` (`uv` when available, `python -m
+  venv` otherwise) and re-execs into it. First serve pays a few seconds; every
+  later one reuses the venv. Three environment variables steer it:
+
+  | Variable | Effect |
+  |---|---|
+  | `CONTEXT_MCP_PYTHON` | Serve with this interpreter instead of bootstrapping (bring your own venv, or native Windows) |
+  | `CONTEXT_MCP_NO_BOOTSTRAP` | Never provision: fail with an explicit message instead |
+  | `CONTEXT_MCP_BOOTSTRAPPED` | Set by the server on hand-over — recursion guard, do not set yourself |
+
+  The CLI modes (`--print-index`, `--version`) stay stdlib-only and never
+  bootstrap.
 
 ### Installation
 
@@ -69,7 +83,8 @@ Three launch modes:
 context-retrieval-mcp                       # console script (after pip install)
 python -m context_retrieval_mcp             # module mode (after pip install)
 python3 context_retrieval_mcp/server.py     # direct run from mcp-server/, or by absolute
-                                            # path as the plugin does (only `pip install mcp` needed)
+                                            # path as the plugin does (no pip install needed —
+                                            # serving bootstraps the SDK, see Prerequisites)
 ```
 
 CLI flags: `--print-index` dumps the resolved index as JSON (works even
