@@ -21,6 +21,20 @@ command fills it.
 - **Nothing exists** → invoke the `constitution-factory` agent (it asks 3 questions, then generates). Format is toolset-driven: `CLAUDE.md` canonical if every harness in use reads it.
 - **A real constitution exists** → **do not touch it.** Say explicitly: "Your CLAUDE.md/AGENTS.md stays as is — the infrastructure works with it." (Migration/restructuring is a separate, optional task the user must ask for.)
 
+## 2b. Existing agents — wire them into the router
+
+Do NOT create new agents at init: agents are born from repeated failure
+patterns, never speculatively (a doc captures *state*; an agent embeds
+*judgment* and drifts unwatched — create one only when a domain keeps
+failing despite its context doc).
+
+But if the project already HAS agents in `.claude/agents/` whose
+front-matter lacks `triggers:`, offer to enrich them: for each, read its
+description and body, add 7-15 routing keywords (single words and phrases,
+distinctive to its domain), then verify with `suggest_agent("<typical
+task>")` that routing matches. Listed-but-unroutable agents are wasted
+infrastructure.
+
 ## 3. Backfill — the step that makes the plugin useful TODAY
 
 If the project has fewer than 3 context docs and a non-trivial codebase:
