@@ -35,8 +35,10 @@ language is ambiguous, ask the user — never decide for them.
 
   One exception, offered — never imposed: if the constitution predates the
   plugin, it lacks the standing instructions that make retrieval and drift
-  handling *systematic* instead of left to the model's discretion. Show this
-  block as an append-only diff and let the user approve:
+  handling *systematic* instead of left to the model's discretion.
+  (Idempotence: if the block — or equivalent instructions — is already
+  present, skip the offer entirely; never duplicate it.) Show this block as
+  an append-only diff and let the user approve:
 
   ```markdown
   ## Codified context
