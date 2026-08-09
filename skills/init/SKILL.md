@@ -10,6 +10,12 @@ Run this sequence in order. Never modify an existing file without showing
 what will change first. A freshly installed plugin is an empty box — this
 command fills it.
 
+**Language rule**: every artifact you write (constitution blocks, context
+docs, agent specs) is written in the language of the project's existing
+documentation — models follow any language equally; the criterion is the
+human who reviews the file. If the project has no documentation yet or the
+language is ambiguous, ask the user — never decide for them.
+
 ## 1. Detect the project state (report it in 3 lines)
 
 - **Constitution**: does `CLAUDE.md` and/or `AGENTS.md` exist with real content (more than a stub)?
@@ -25,7 +31,25 @@ command fills it.
   nobody arbitrated. The generated file is shown to the user before any
   commit; a constitution the user has never read is not a deliverable.
   Format is toolset-driven: `CLAUDE.md` canonical if every harness in use reads it.
-- **A real constitution exists** → **do not touch it.** Say explicitly: "Your CLAUDE.md/AGENTS.md stays as is — the infrastructure works with it." (Migration/restructuring is a separate, optional task the user must ask for.)
+- **A real constitution exists** → **do not touch its content.** Say explicitly: "Your CLAUDE.md/AGENTS.md stays as is — the infrastructure works with it." (Migration/restructuring is a separate, optional task the user must ask for.)
+
+  One exception, offered — never imposed: if the constitution predates the
+  plugin, it lacks the standing instructions that make retrieval and drift
+  handling *systematic* instead of left to the model's discretion.
+  (Idempotence: if the block — or equivalent instructions — is already
+  present, skip the offer entirely; never duplicate it.) Show this block as
+  an append-only diff and let the user approve:
+
+  ```markdown
+  ## Codified context
+  - Before exploring unfamiliar code: call `find_relevant_context(task)` and `suggest_agent(task)` (context-retrieval MCP) first.
+  - CONTEXT DRIFT warning at session start: HIGH → update the doc before anything else; MEDIUM → mention it to the user.
+  - Spec deltas proposed at session end: apply after the user's yes.
+  ```
+
+  Without these lines the MCP tools still work, but their use depends on the
+  model noticing them — the weak link on any project whose constitution
+  predates the plugin.
 
 ## 2b. Existing agents — wire them into the router
 
