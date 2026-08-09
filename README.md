@@ -23,6 +23,17 @@ That's it. `init` detects what already exists (an existing `CLAUDE.md` is never 
 
 Only prerequisite: `python3` 3.10+ (the MCP server provisions its own SDK on first run). Not on Claude Code? See [Manual setup](#manual-setup-any-harness).
 
+## After init: the daily workflow
+
+You work normally — the infrastructure acts on its own at four moments:
+
+1. **While coding**: touch a file listed in a doc's `files:` → its `ctx-*` skill auto-loads; explore unfamiliar ground → `find_relevant_context()` returns the right docs instead of a codebase crawl. You explain nothing.
+2. **At session end**: changed a subsystem's code without its doc? The Stop hook proposes targeted spec deltas. **You answer yes/no — that's the daily gesture.**
+3. **When you catch yourself explaining something for the second time** (the only manual trigger): *"create a context doc for X"*. Indexed instantly, skill generated.
+4. **When a domain keeps failing despite its doc** (rare): *"use the agent-factory to create a `<domain>-reviewer` with the known pitfalls embedded"*. Routed automatically from then on.
+
+What you never do: hand-maintain the index/tables/skills (all derived from front-matter), re-read docs "just in case" (the guardian watches every commit), or write docs speculatively (never before the second explanation). The payoff compounds: week 1 you answer yes/no's; month 3 your prompts are one line and cheaper models handle the spec-covered tasks.
+
 ## Why
 
 AI coding agents have broad programming knowledge and zero project memory. Every session starts from scratch: conventions forgotten, hard-won bug fixes re-learned, the same mistakes repeated. One instructions file fixes that on a small repo — past ~20k lines it stops scaling.
