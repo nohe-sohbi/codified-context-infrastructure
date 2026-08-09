@@ -97,6 +97,25 @@ def recent_commit_files(root: Path):
             touched_docs.add(os.path.basename(f))
         elif not f.endswith(".md"):
             code_files.add(f)
+
+    # Uncommitted docs (new or modified) count as touched: a doc created or
+    # refreshed this session is fresh content even before it lands in a
+    # commit — otherwise a just-backfilled project fires pure false positives
+    # until the docs are committed.
+    try:
+        status = subprocess.run(
+            ["git", "status", "--porcelain", "--untracked-files=all",
+             "--", ".claude/context"],
+            capture_output=True, text=True, timeout=3, cwd=root,
+        )
+        if status.returncode == 0:
+            for line in status.stdout.splitlines():
+                path = line[3:].split(" -> ")[-1].strip().strip('"')
+                if path.endswith(".md"):
+                    touched_docs.add(os.path.basename(path))
+    except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+        pass
+
     return code_files, touched_docs
 
 

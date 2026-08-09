@@ -71,6 +71,22 @@ def test_drift_check_full_cycle(fixture_project, tmp_path):
     assert "CONTEXT DRIFT" not in out5.stdout
 
 
+def test_uncommitted_doc_silences_drift(fixture_project, tmp_path):
+    """A doc created or refreshed but not yet committed counts as touched —
+    a just-backfilled project must not fire pure false positives."""
+    project = _make_git_project(fixture_project, tmp_path)
+    (project / "src/services/save_service.py").write_text("def save(p):\n    return False\n")
+    _git(project, "commit", "-aqm", "change save logic")
+
+    # Drift fires first
+    assert "CONTEXT DRIFT" in _run_check(project).stdout
+
+    # Refresh the doc WITHOUT committing -> silent (and state cleared)
+    doc = project / ".claude/context/save-system.md"
+    doc.write_text(doc.read_text() + "\nRefreshed this session.\n")
+    assert "CONTEXT DRIFT" not in _run_check(project).stdout
+
+
 def test_drift_check_dismiss_flag(fixture_project, tmp_path):
     project = _make_git_project(fixture_project, tmp_path)
     (project / "src/network/sync.py").write_text("def send_snapshot(s):\n    return None\n")

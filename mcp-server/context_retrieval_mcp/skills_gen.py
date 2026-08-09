@@ -44,7 +44,7 @@ def _render_description(info: dict, warnings: list, key: str) -> str:
     description = (info.get("description") or info.get("name") or key).strip()
     if len(description) > DESCRIPTION_CAP:
         warnings.append(f"{key}: description exceeds {DESCRIPTION_CAP} chars — truncated")
-        return description[: DESCRIPTION_CAP - 1] + "…"
+        return description[: DESCRIPTION_CAP - 3] + "..."
 
     keywords = info.get("keywords") or []
     if not keywords:
@@ -104,8 +104,11 @@ def render_skill(key: str, info: dict, warnings: list, slug: str | None = None) 
         lines.extend(f"- `{p}`" for p in paths)
         lines.append("")
     doc = info.get("doc") or f".claude/context/{key}.md"
+    # Generated content stays ASCII-safe (no typographic dashes/ellipses):
+    # some projects ban those characters in their tree, and regeneration
+    # would keep reintroducing them.
     lines += [
-        f"**Full spec:** Read `{doc}` for the complete specification — do not "
+        f"**Full spec:** Read `{doc}` for the complete specification. Do not "
         "rely on this summary for implementation details.",
     ]
     related = info.get("related") or []

@@ -15,10 +15,16 @@ command fills it.
 - **Constitution**: does `CLAUDE.md` and/or `AGENTS.md` exist with real content (more than a stub)?
 - **Context docs**: how many `.claude/context/*.md`? (Use the `get_index_status()` MCP tool if connected — it also verifies the server resolved THIS project's root — otherwise glob.)
 - **Agents/skills**: anything in `.claude/agents/`, `.claude/skills/`?
+- **Versionability**: does `.gitignore` ignore `.claude/` (or `.claude/*`, or the context/skills subpaths)? If yes, say it LOUDLY: a context infrastructure that is not versioned serves one machine and dies at the next clone. Propose the narrowing (e.g. ignore `.claude/settings.local.json`, keep `context/`, `skills/`, `agents/` tracked) — the user decides.
 
 ## 2. Constitution — create only if missing
 
-- **Nothing exists** → invoke the `constitution-factory` agent (it asks 3 questions, then generates). Format is toolset-driven: `CLAUDE.md` canonical if every harness in use reads it.
+- **Nothing exists** → invoke the `constitution-factory` agent. Its 3 questions
+  (what is the project / maturity / priorities) are answered **by the user,
+  never by you or a subagent** — self-answering them produces a constitution
+  nobody arbitrated. The generated file is shown to the user before any
+  commit; a constitution the user has never read is not a deliverable.
+  Format is toolset-driven: `CLAUDE.md` canonical if every harness in use reads it.
 - **A real constitution exists** → **do not touch it.** Say explicitly: "Your CLAUDE.md/AGENTS.md stays as is — the infrastructure works with it." (Migration/restructuring is a separate, optional task the user must ask for.)
 
 ## 2b. Existing agents — wire them into the router
@@ -71,7 +77,29 @@ auto-loading skills and the drift guardian are all live over real content.
 ## 4. Activate and verify
 
 1. Generate the auto-loading skills: `python3 <plugin-root>/scripts/generate_skills.py --project-root .` (this SKILL.md lives at `<plugin-root>/skills/init/SKILL.md` — the plugin root is two directories up).
-2. Call `get_index_status()` → it must report this project's root and the new doc count, with no warnings about the new docs.
-3. Close by telling the user the operating loop, in two lines:
-   - the drift guardian will propose spec updates at session end on its own — just answer yes/no;
-   - create a NEW doc whenever they catch themselves explaining the same thing twice.
+2. Run the other two plugin scripts: `validate_architecture.py --project-root .` (must end 0 errors) and `generate_reference_table.py --project-root .` (no-op without GENERATED markers — that is fine, say so).
+3. Call `get_index_status()` → it must report this project's root and the new doc count, with no warnings about the new docs.
+
+## 5. Completeness self-audit — mandatory before declaring done
+
+The user should never need to ask "were you complete?" — ask it yourself,
+answer it honestly, and print the answer. The audit:
+
+- **Scope**: every subsystem you identified but did NOT document is listed
+  at the TOP of the final report as a **decision for the user** ("in scope
+  next wave? yes/no") — never as a footnote. Silently reducing the scope is
+  the single most common failure of this sequence.
+- **Depth**: the coverage table (files read in full vs declared) is printed,
+  including partial coverage confessed per doc.
+- **Template compliance**: each doc has the template's sections — including
+  **Testing** when the project has test rigs/harnesses (find them; a doc
+  that ignores the project's own oracle is incomplete).
+- **Artifacts the user never saw**: any generated file the user has not
+  reviewed (constitution above all) is flagged for review before commit.
+- **Housekeeping**: leftover placeholders (`.gitkeep` in a now-populated
+  directory), uncommitted deliverables, and the versionability finding from
+  step 1 are restated with a proposed commit message.
+
+Close by telling the user the operating loop, in two lines:
+- the drift guardian will propose spec updates at session end on its own — just answer yes/no;
+- create a NEW doc whenever they catch themselves explaining the same thing twice.
