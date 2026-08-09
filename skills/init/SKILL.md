@@ -10,6 +10,12 @@ Run this sequence in order. Never modify an existing file without showing
 what will change first. A freshly installed plugin is an empty box — this
 command fills it.
 
+**Language rule**: every artifact you write (constitution blocks, context
+docs, agent specs) is written in the language of the project's existing
+documentation — models follow any language equally; the criterion is the
+human who reviews the file. If the project has no documentation yet or the
+language is ambiguous, ask the user — never decide for them.
+
 ## 1. Detect the project state (report it in 3 lines)
 
 - **Constitution**: does `CLAUDE.md` and/or `AGENTS.md` exist with real content (more than a stub)?
