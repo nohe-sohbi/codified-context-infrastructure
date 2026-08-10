@@ -106,6 +106,22 @@ See `quickstart/README.md` for the full bootstrapping sequence and the front-mat
 
 > **Layout note:** the recommended layout is flat — `.claude/agents/{name}.md` and `.claude/context/{topic}.md`. The legacy nested `.claude/agents/{id}/AGENT.md` layout remains discovered for backward compatibility. Hooks and plugin MCP config invoke `python3` (macOS/Linux convention); on native Windows, adapt the commands to your Python launcher, or point the server at one with `CONTEXT_MCP_PYTHON`.
 
+### pi (pi.dev): let the agent port it
+
+pi users skip the manual setup entirely — pi's philosophy is that the agent
+extends its own harness. From inside your project, paste one line into pi:
+
+```
+Fetch https://raw.githubusercontent.com/nohe-sohbi/codified-context-infrastructure/main/PORT-TO-PI.md and follow it.
+```
+
+[PORT-TO-PI.md](PORT-TO-PI.md) is a complete build spec: retrieval via
+`pi-mcp-adapter` (or `--print-index` fallback tools), the drift hooks as one
+extension, factories as `/ctx-*` prompt templates, skills renamed into pi's
+namespace — plus the co-existence guards and the verification checklist pi
+must pass before calling the port done. The `.claude/` knowledge base stays
+unchanged, so Claude Code and pi teammates share the same infrastructure.
+
 ## Harness & Model Compatibility
 
 The knowledge artifacts are plain markdown with YAML front-matter — portable by construction. What each harness can consume:
@@ -115,7 +131,7 @@ The knowledge artifacts are plain markdown with YAML front-matter — portable b
 | Constitution | `CLAUDE.md` shim (`@AGENTS.md`) | `AGENTS.md` natively | `AGENTS.md` natively | — |
 | Context docs (Tier 3) | MCP tools + generated `ctx-*` skills (auto-load by `paths:`) | MCP server (`.mcp.json`-style config) or `--print-index` JSON | MCP server | `--print-index` JSON |
 | Specialized agents (Tier 2) | `.claude/agents/*.md` subagents | Convert front-matter to the tool's persona format | Rules/modes | — |
-| Drift detection | SessionStart + Stop hooks | Run `hooks/drift_check.py` manually or via the tool's hook system | — | `validate_architecture.py` + `drift_check.py` in CI |
+| Drift detection | SessionStart + Stop hooks | pi: agent-driven port ([PORT-TO-PI.md](PORT-TO-PI.md)); others: run `hooks/drift_check.py` manually | — | `validate_architecture.py` + `drift_check.py` in CI |
 
 **Model routing intent** (encode it in your constitution; map per harness): judgment-heavy work — architecture, debugging, cross-cutting review — to your strongest model; pattern-following work *covered by a spec* to fast/economical models. Rich context docs are what make the cheaper tier viable: the spec compensates for the model.
 
