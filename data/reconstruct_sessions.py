@@ -151,7 +151,7 @@ def load_existing_hashes(csv_path: Path) -> Set[str]:
                     h = row.get('prompt_hash', '')
                     if h:
                         hashes.add(h)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"  Warning: Could not read existing CSV: {e}")
     return hashes
 
@@ -169,7 +169,7 @@ def make_record(
         dt = datetime.fromisoformat(timestamp_iso.replace('Z', '+00:00'))
         date_str = dt.strftime('%Y-%m-%d')
         time_str = dt.strftime('%H:%M:%S')
-    except Exception:
+    except Exception:  # noqa: BLE001
         date_str = ''
         time_str = ''
 
@@ -336,7 +336,7 @@ def parse_git_commits() -> List[Dict]:
              '--numstat',
              f'--after={GAP_START.strftime("%Y-%m-%d")}',
              f'--before={GAP_END.strftime("%Y-%m-%d")}'],
-            capture_output=True, text=True, encoding='utf-8',
+            capture_output=True, text=True, encoding='utf-8', check=False,
             cwd=str(REPO_ROOT),
             timeout=30,
         )
@@ -696,7 +696,7 @@ def merge_to_csv(
                                         'cost_total_usd']:
                         row[float_field] = float(row.get(float_field, 0) or 0)
                     existing_rows.append(row)
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"  Error reading existing CSV: {e}")
             return
 
@@ -796,7 +796,7 @@ Examples:
             try:
                 with open(csv_path, 'r', encoding='utf-8') as f:
                     existing_count = sum(1 for _ in f) - 1  # minus header
-            except Exception:
+            except Exception:  # noqa: BLE001
                 pass
         print_stats(todo_records, git_records, snapshot_counts, existing_count)
 

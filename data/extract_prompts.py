@@ -211,7 +211,7 @@ def load_existing_hashes(csv_path: Path) -> Set[str]:
                 for row in reader:
                     if 'prompt_hash' in row:
                         hashes.add(row['prompt_hash'])
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             print(f"Warning: Could not read existing CSV: {e}")
     return hashes
 
@@ -234,7 +234,7 @@ def extract_from_jsonl(filepath: Path, existing_hashes: Set[str]) -> List[Dict]:
 
                 except json.JSONDecodeError:
                     continue
-    except Exception as e:
+    except Exception as e:  # noqa: BLE001
         print(f"Error reading {filepath}: {e}")
         return []
 
@@ -263,7 +263,7 @@ def extract_from_jsonl(filepath: Path, existing_hashes: Set[str]) -> List[Dict]:
                         prompt_text = text
                         break
 
-        if not prompt_text or prompt_text.startswith('<ide_') or prompt_text.startswith('<system'):
+        if not prompt_text or prompt_text.startswith(('<ide_', '<system')):
             continue
 
         # Skip warmup messages
@@ -286,7 +286,7 @@ def extract_from_jsonl(filepath: Path, existing_hashes: Set[str]) -> List[Dict]:
             'agents': [],
         }
 
-        for _, other_obj in messages_by_uuid.items():
+        for other_obj in messages_by_uuid.values():
             if other_obj.get('parentUuid') == uuid and other_obj.get('type') == 'assistant':
                 resp_msg = other_obj.get('message', {})
                 response_data['model'] = resp_msg.get('model', '')

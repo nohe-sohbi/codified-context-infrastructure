@@ -146,7 +146,7 @@ def main():
         }))
     except SystemExit:
         raise
-    except Exception:
+    except Exception:  # noqa: BLE001
         # Advisory hook: never break a session on our own bugs
         pass
 

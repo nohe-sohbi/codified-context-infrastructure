@@ -202,7 +202,7 @@ def load_subsystems(context_dir: Path):
 
         try:
             meta, body, doc_warnings = parse_front_matter(text)
-        except Exception as exc:  # hostile input must never kill the index
+        except Exception as exc:  # noqa: BLE001  # hostile input must never kill the index
             warnings.append(
                 f"{doc.name}: unparseable front-matter ({exc.__class__.__name__}) — skipped"
             )
@@ -260,7 +260,7 @@ def load_agents(agents_dir: Path):
 
         try:
             meta, _body, doc_warnings = parse_front_matter(text)
-        except Exception as exc:  # hostile input must never kill the index
+        except Exception as exc:  # noqa: BLE001  # hostile input must never kill the index
             warnings.append(
                 f"agents/{rel}: unparseable front-matter ({exc.__class__.__name__}) — skipped"
             )

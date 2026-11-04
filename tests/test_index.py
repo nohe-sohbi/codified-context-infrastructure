@@ -136,7 +136,7 @@ def test_stdlib_only_import_without_mcp(repo_root):
     )
     env = dict(os.environ, PYTHONPATH=str(repo_root / "mcp-server"))
     result = subprocess.run(
-        [sys.executable, "-c", code], capture_output=True, text=True, env=env
+        [sys.executable, "-c", code], capture_output=True, text=True, env=env, check=False
     )
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == "ok"

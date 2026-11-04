@@ -690,7 +690,7 @@ def get_file_map() -> str:
     """Key file locations by subsystem."""
     lines = ["# File Map\n", "Key file locations organized by subsystem.\n"]
 
-    for key, info in SUBSYSTEMS.items():
+    for info in SUBSYSTEMS.values():
         lines.append(f"\n## {info['name']}")
         lines.append(f"*{info['description']}*\n")
         for f in info["files"]:
@@ -1563,7 +1563,7 @@ def search_context_documents(query: str) -> dict:
                     "matches": matches[:10],  # Limit to 10 matches per doc
                     "total_matches": len(matches),
                 })
-        except Exception as e:
+        except Exception as e:  # noqa: BLE001
             continue
 
     # Also search SUBSYSTEMS keywords

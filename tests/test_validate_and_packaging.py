@@ -11,7 +11,7 @@ VALIDATE = REPO_ROOT / "scripts" / "validate_architecture.py"
 def _run_validate(project, *args):
     return subprocess.run(
         [sys.executable, str(VALIDATE), "--project-root", str(project), *args],
-        capture_output=True, text=True, timeout=60,
+        capture_output=True, text=True, timeout=60, check=False,
     )
 
 
@@ -76,7 +76,7 @@ def test_print_index_works_without_mcp_sdk(repo_root, fixture_project):
         f"runpy.run_path({str(repo_root / 'mcp-server/context_retrieval_mcp/server.py')!r}, run_name='__main__')\n"
     )
     out = subprocess.run([sys.executable, "-c", code],
-                         capture_output=True, text=True, timeout=30)
+                         capture_output=True, text=True, timeout=30, check=False)
     assert out.returncode == 0, out.stderr
     assert '"save-system"' in out.stdout
 
@@ -85,14 +85,14 @@ def test_module_launch_modes(repo_root, fixture_project):
     env = {**os.environ, "PYTHONPATH": str(repo_root / "mcp-server")}
     out = subprocess.run(
         [sys.executable, "-m", "context_retrieval_mcp", "--version"],
-        capture_output=True, text=True, env=env, timeout=30,
+        capture_output=True, text=True, env=env, timeout=30, check=False,
     )
     assert out.returncode == 0 and out.stdout.strip(), out.stderr
 
     server = repo_root / "mcp-server" / "context_retrieval_mcp" / "server.py"
     out2 = subprocess.run(
         [sys.executable, str(server), "--project-root", str(fixture_project), "--print-index"],
-        capture_output=True, text=True, timeout=30,
+        capture_output=True, text=True, timeout=30, check=False,
     )
     assert out2.returncode == 0, out2.stderr
     assert '"save-system"' in out2.stdout

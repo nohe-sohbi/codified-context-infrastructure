@@ -466,7 +466,7 @@ def _log(message):
 
 
 def _run(cmd):
-    done = subprocess.run([str(c) for c in cmd], capture_output=True, text=True)
+    done = subprocess.run([str(c) for c in cmd], capture_output=True, text=True, check=False)
     if done.returncode != 0:
         detail = (done.stderr.strip() or done.stdout.strip() or "no output")
         raise SystemExit(
@@ -483,7 +483,7 @@ def provision_venv():
         _log(f"mcp SDK missing — provisioning {python.parent.parent}")
         _run([uv, "venv", "--python", sys.executable, python.parent.parent] if uv
              else [sys.executable, "-m", "venv", python.parent.parent])
-    if subprocess.run([str(python), "-c", "import mcp"], capture_output=True).returncode:
+    if subprocess.run([str(python), "-c", "import mcp"], capture_output=True, check=False).returncode:
         _log("installing mcp>=1.0.0")
         _run([uv, "pip", "install", "--python", python, "mcp>=1.0.0"] if uv
              else [python, "-m", "pip", "install", "--quiet",

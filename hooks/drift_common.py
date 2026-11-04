@@ -19,7 +19,7 @@ sys.path.insert(0, str(_HOOKS_DIR.parent / "mcp-server"))
 
 try:
     from context_retrieval_mcp.context_index import load_subsystems  # noqa: E402
-except Exception:  # pragma: no cover - missing sibling package
+except Exception:  # noqa: BLE001  # pragma: no cover - missing sibling package
     load_subsystems = None
 
 STATE_FILE = ".claude/.drift-state.json"

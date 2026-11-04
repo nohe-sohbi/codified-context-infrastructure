@@ -47,7 +47,7 @@ def test_legacy_header_fallback():
 
 
 def test_no_metadata():
-    meta, body, warnings = parse_front_matter("# Just a Doc\n\nText.\n")
+    meta, body, _warnings = parse_front_matter("# Just a Doc\n\nText.\n")
     assert meta == {}
     assert body.startswith("# Just a Doc")
 
@@ -109,6 +109,6 @@ def test_double_empty_items_dropped():
 
 
 def test_horizontal_rule_start_is_not_a_fence():
-    meta, body, warnings = parse_front_matter("----\n# Doc\nBody.\n")
+    meta, _body, warnings = parse_front_matter("----\n# Doc\nBody.\n")
     assert meta == {}
     assert warnings == []  # no bogus "never closed" warning
