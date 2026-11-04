@@ -34,7 +34,7 @@ def _run_check(project, *args):
     env.pop("DRIFT_PROJECT_NAME", None)
     return subprocess.run(
         [sys.executable, str(HOOKS_DIR / "drift_check.py"), *args],
-        cwd=project, capture_output=True, text=True, env=env, timeout=30,
+        cwd=project, capture_output=True, text=True, env=env, timeout=30, check=False,
     )
 
 
@@ -115,7 +115,7 @@ def _run_stop(project, payload, extra_env=None):
     return subprocess.run(
         [sys.executable, str(HOOKS_DIR / "drift_stop.py")],
         input=json.dumps(payload), cwd=project,
-        capture_output=True, text=True, env=env, timeout=30,
+        capture_output=True, text=True, env=env, timeout=30, check=False,
     )
 
 

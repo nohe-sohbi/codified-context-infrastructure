@@ -69,7 +69,7 @@ def git_head(root: Path) -> str | None:
     try:
         result = subprocess.run(
             ["git", "rev-parse", "HEAD"],
-            capture_output=True, text=True, timeout=2, cwd=root,
+            capture_output=True, text=True, timeout=2, cwd=root, check=False,
         )
         return result.stdout.strip() if result.returncode == 0 else None
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
@@ -81,7 +81,7 @@ def recent_commit_files(root: Path):
     try:
         result = subprocess.run(
             ["git", "log", f"--max-count={MAX_COMMITS}", "--name-only", "--format="],
-            capture_output=True, text=True, timeout=3, cwd=root,
+            capture_output=True, text=True, timeout=3, cwd=root, check=False,
         )
         if result.returncode != 0:
             return set(), set()
@@ -106,7 +106,7 @@ def recent_commit_files(root: Path):
         status = subprocess.run(
             ["git", "status", "--porcelain", "--untracked-files=all",
              "--", ".claude/context"],
-            capture_output=True, text=True, timeout=3, cwd=root,
+            capture_output=True, text=True, timeout=3, cwd=root, check=False,
         )
         if status.returncode == 0:
             for line in status.stdout.splitlines():
@@ -316,7 +316,7 @@ def main():
         output = format_output(drift, session_info, times_shown)
         if output:
             print(output)
-    except Exception:
+    except Exception:  # noqa: BLE001
         # Never block session start
         pass
 

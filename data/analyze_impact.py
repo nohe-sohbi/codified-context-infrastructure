@@ -29,7 +29,7 @@ def get_git_commits(repo_path: Path) -> List[Dict]:
     result = subprocess.run(
         ['git', 'log', '--all', '--pretty=format:%H|%aI|%s', '--numstat'],
         cwd=repo_path,
-        capture_output=True,
+        capture_output=True, check=False,
         text=True
     )
 

@@ -142,7 +142,7 @@ def get_head_sha(repo_root: Path) -> str | None:
     try:
         result = subprocess.run(
             ["git", "rev-parse", "HEAD"],
-            capture_output=True, text=True, timeout=2, cwd=repo_root,
+            capture_output=True, text=True, timeout=2, cwd=repo_root, check=False,
         )
         if result.returncode == 0:
             return result.stdout.strip()
@@ -182,7 +182,7 @@ def detect_code_doc_drift(repo_root: Path, subsystems: list) -> list:
     try:
         result = subprocess.run(
             ["git", "log", f"--max-count={MAX_COMMITS}", "--name-only", "--format=%H"],
-            capture_output=True, text=True, timeout=2, cwd=repo_root,
+            capture_output=True, text=True, timeout=2, cwd=repo_root, check=False,
         )
         if result.returncode != 0:
             return []
@@ -474,10 +474,9 @@ def main():
                 # New HEAD — reset counter, show fresh (count this as showing 1)
                 times_shown = 1
                 save_state(repo_root, {"head_sha": head, "times_shown": 1})
-        elif not drift:
+        elif not drift and state:
             # No drift (docs were updated or no code changes) — clear state
-            if state:
-                save_state(repo_root, {})
+            save_state(repo_root, {})
 
         # 4. Analyze recent session logs
         project_dirs = find_project_dirs()
@@ -488,7 +487,7 @@ def main():
         if output:
             print(output)
 
-    except Exception:
+    except Exception:  # noqa: BLE001
         # Never block session start
         pass
 

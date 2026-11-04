@@ -108,8 +108,8 @@ def render_skill(key: str, info: dict, warnings: list, slug: str | None = None) 
     # some projects ban those characters in their tree, and regeneration
     # would keep reintroducing them.
     lines += [
-        f"**Full spec:** Read `{doc}` for the complete specification. Do not "
-        "rely on this summary for implementation details.",
+        (f"**Full spec:** Read `{doc}` for the complete specification. Do not "
+        "rely on this summary for implementation details."),
     ]
     related = info.get("related") or []
     if related:
