@@ -21,8 +21,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "mcp-server"))
-from context_retrieval_mcp.context_index import load_index  # noqa: E402
-from context_retrieval_mcp.skills_gen import generate_skills  # noqa: E402
+from context_retrieval_mcp.context_index import load_index
+from context_retrieval_mcp.skills_gen import generate_skills
 
 
 def main() -> int:

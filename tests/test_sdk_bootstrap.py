@@ -17,7 +17,12 @@ from context_retrieval_mcp.server import (
     venv_python,
 )
 
-SERVER = Path(__file__).resolve().parent.parent / "mcp-server" / "context_retrieval_mcp" / "server.py"
+SERVER = (
+    Path(__file__).resolve().parent.parent
+    / "mcp-server"
+    / "context_retrieval_mcp"
+    / "server.py"
+)
 
 
 def test_sdk_present_serves_in_place():
@@ -66,12 +71,22 @@ def test_venv_python_lands_in_the_cache_dir(tmp_path, monkeypatch):
 def test_cli_modes_never_bootstrap(fixture_project, tmp_path):
     """--print-index must stay stdlib-only: no SDK, no venv, exit 0."""
     nomcp = tmp_path / "nomcp"
-    subprocess.run([sys.executable, "-m", "venv", str(nomcp)], check=True, capture_output=True)
+    subprocess.run(
+        [sys.executable, "-m", "venv", str(nomcp)], check=True, capture_output=True
+    )
     cache = tmp_path / "cache"
     out = subprocess.run(
-        [str(venv_python(nomcp)), str(SERVER),
-         "--print-index", "--project-root", str(fixture_project)],
-        capture_output=True, text=True, timeout=120, check=False,
+        [
+            str(venv_python(nomcp)),
+            str(SERVER),
+            "--print-index",
+            "--project-root",
+            str(fixture_project),
+        ],
+        capture_output=True,
+        text=True,
+        timeout=120,
+        check=False,
         env={**os.environ, "XDG_CACHE_HOME": str(cache)},
     )
     assert out.returncode == 0, out.stderr
@@ -81,11 +96,21 @@ def test_cli_modes_never_bootstrap(fixture_project, tmp_path):
 def test_serving_without_sdk_and_without_bootstrap_is_explicit(tmp_path):
     """Opt-out path: fail with an actionable message, not a silent exit."""
     nomcp = tmp_path / "nomcp"
-    subprocess.run([sys.executable, "-m", "venv", str(nomcp)], check=True, capture_output=True)
+    subprocess.run(
+        [sys.executable, "-m", "venv", str(nomcp)], check=True, capture_output=True
+    )
     out = subprocess.run(
         [str(venv_python(nomcp)), str(SERVER)],
-        capture_output=True, text=True, timeout=120, stdin=subprocess.DEVNULL, check=False,
-        env={**os.environ, NO_BOOTSTRAP: "1", "XDG_CACHE_HOME": str(tmp_path / "cache")},
+        capture_output=True,
+        text=True,
+        timeout=120,
+        stdin=subprocess.DEVNULL,
+        check=False,
+        env={
+            **os.environ,
+            NO_BOOTSTRAP: "1",
+            "XDG_CACHE_HOME": str(tmp_path / "cache"),
+        },
     )
     assert out.returncode != 0
     assert PYTHON_OVERRIDE in out.stderr

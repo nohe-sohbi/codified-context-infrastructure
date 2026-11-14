@@ -23,7 +23,7 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "mcp-server"))
-from context_retrieval_mcp.context_index import load_index  # noqa: E402
+from context_retrieval_mcp.context_index import load_index
 
 
 def render_subsystem_table(index) -> str:
@@ -61,11 +61,16 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--project-root", type=Path, default=None)
     parser.add_argument(
-        "--target", type=Path, default=None,
+        "--target",
+        type=Path,
+        default=None,
         help="Constitution file (default: AGENTS.md, else CLAUDE.md, at project root)",
     )
-    parser.add_argument("--check", action="store_true",
-                        help="Exit 1 if tables are stale; write nothing.")
+    parser.add_argument(
+        "--check",
+        action="store_true",
+        help="Exit 1 if tables are stale; write nothing.",
+    )
     args = parser.parse_args()
 
     index = load_index(args.project_root.resolve() if args.project_root else None)
@@ -77,8 +82,11 @@ def main() -> int:
                 target = index.project_root / candidate
                 break
     if target is None or not target.is_file():
-        print("No AGENTS.md or CLAUDE.md found at project root "
-              f"({index.project_root}); pass --target.", file=sys.stderr)
+        print(
+            "No AGENTS.md or CLAUDE.md found at project root "
+            f"({index.project_root}); pass --target.",
+            file=sys.stderr,
+        )
         return 2
 
     original = target.read_text(encoding="utf-8")
@@ -92,16 +100,20 @@ def main() -> int:
         spliced_any = spliced_any or ok
 
     if not spliced_any:
-        print(f"{target}: no GENERATED marker blocks found — nothing to do.",
-              file=sys.stderr)
+        print(
+            f"{target}: no GENERATED marker blocks found — nothing to do.",
+            file=sys.stderr,
+        )
         return 2
 
     if updated == original:
         print(f"{target}: tables up to date.")
         return 0
     if args.check:
-        print(f"{target}: tables are STALE — run generate_reference_table.py.",
-              file=sys.stderr)
+        print(
+            f"{target}: tables are STALE — run generate_reference_table.py.",
+            file=sys.stderr,
+        )
         return 1
 
     target.write_text(updated, encoding="utf-8")

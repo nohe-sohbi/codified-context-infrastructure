@@ -55,6 +55,7 @@ _H1 = re.compile(r"^#\s+(.+)$", re.MULTILINE)
 # Front-matter parsing (deliberately small YAML subset)
 # =============================================================================
 
+
 def _parse_scalar(value: str):
     value = value.strip()
     if len(value) >= 2 and value[0] == value[-1] and value[0] in "\"'":
@@ -67,6 +68,7 @@ def _parse_scalar(value: str):
     if value.lower() in ("true", "false"):
         return value.lower() == "true"
     return value
+
 
 def _parse_inline_list(value: str) -> list:
     """Split an inline list, respecting quoted items: [a, "hello, world", b]."""
@@ -112,7 +114,7 @@ def parse_front_matter(text: str):
             "last-verified": legacy.group("date"),
             "_legacy_header": True,
         }
-        body = text[legacy.end():].lstrip("\n")
+        body = text[legacy.end() :].lstrip("\n")
         return meta, body, warnings
 
     # "---\n" exactly: a "----" horizontal rule is not a front-matter fence
@@ -125,7 +127,7 @@ def parse_front_matter(text: str):
         return {}, text, warnings
 
     block = text[3:end].strip("\n")
-    body = text[end + 4:].lstrip("\n")
+    body = text[end + 4 :].lstrip("\n")
 
     meta: dict = {}
     current_list_key = None
@@ -167,9 +169,11 @@ def parse_front_matter(text: str):
 # Loaders
 # =============================================================================
 
+
 def _first_h1(body: str) -> str:
     match = _H1.search(body)
     return match.group(1).strip() if match else ""
+
 
 def _as_str_list(value) -> list:
     if value is None:
@@ -202,7 +206,9 @@ def load_subsystems(context_dir: Path):
 
         try:
             meta, body, doc_warnings = parse_front_matter(text)
-        except Exception as exc:  # noqa: BLE001  # hostile input must never kill the index
+        except (
+            Exception
+        ) as exc:  # hostile input must never kill the index
             warnings.append(
                 f"{doc.name}: unparseable front-matter ({exc.__class__.__name__}) — skipped"
             )
@@ -210,10 +216,14 @@ def load_subsystems(context_dir: Path):
         warnings.extend(f"{doc.name}: {w}" for w in doc_warnings)
 
         if not meta:
-            warnings.append(f"{doc.name}: no front-matter and no legacy header — skipped")
+            warnings.append(
+                f"{doc.name}: no front-matter and no legacy header — skipped"
+            )
             continue
         if meta.get("_legacy_header"):
-            warnings.append(f"{doc.name}: legacy header only — indexed without keywords/files")
+            warnings.append(
+                f"{doc.name}: legacy header only — indexed without keywords/files"
+            )
 
         key = str(meta.get("subsystem") or doc.stem)
         if key in subsystems:
@@ -222,7 +232,9 @@ def load_subsystems(context_dir: Path):
 
         priority = str(meta.get("priority", "medium")).lower()
         if priority not in PRIORITIES:
-            warnings.append(f"{doc.name}: unknown priority {priority!r} — using 'medium'")
+            warnings.append(
+                f"{doc.name}: unknown priority {priority!r} — using 'medium'"
+            )
             priority = "medium"
 
         subsystems[key] = {
@@ -260,7 +272,9 @@ def load_agents(agents_dir: Path):
 
         try:
             meta, _body, doc_warnings = parse_front_matter(text)
-        except Exception as exc:  # noqa: BLE001  # hostile input must never kill the index
+        except (
+            Exception
+        ) as exc:  # hostile input must never kill the index
             warnings.append(
                 f"agents/{rel}: unparseable front-matter ({exc.__class__.__name__}) — skipped"
             )
@@ -293,6 +307,7 @@ def load_agents(agents_dir: Path):
 # Project root resolution + live index
 # =============================================================================
 
+
 def resolve_project_root() -> Path:
     """Resolution chain (first hit wins):
     1. $CONTEXT_MCP_PROJECT_ROOT   (explicit override)
@@ -320,9 +335,12 @@ class Index:
     long-lived, and factory agents create docs mid-session.
     """
 
-    def __init__(self, project_root: Path,
-                 extra_subsystems: dict | None = None,
-                 extra_agents: dict | None = None):
+    def __init__(
+        self,
+        project_root: Path,
+        extra_subsystems: dict | None = None,
+        extra_agents: dict | None = None,
+    ):
         self.project_root = Path(project_root)
         self.context_dir = self.project_root / ".claude" / "context"
         self.agents_dir = self.project_root / ".claude" / "agents"

@@ -1,7 +1,7 @@
 import shutil
 
 from context_retrieval_mcp.context_index import Index
-from context_retrieval_mcp.skills_gen import generate_skills, GENERATOR_MARKER
+from context_retrieval_mcp.skills_gen import GENERATOR_MARKER, generate_skills
 
 
 def _project(fixture_project, tmp_path):
@@ -23,8 +23,8 @@ def test_generation_and_idempotency(fixture_project, tmp_path):
     assert "name: ctx-save-system" in skill
     assert GENERATOR_MARKER in skill
     assert "  - src/services/save_service.py" in skill
-    assert "  - src/services/**" in skill              # dir/ -> dir/**
-    assert ".claude/context/save-system.md" in skill   # points to canonical doc
+    assert "  - src/services/**" in skill  # dir/ -> dir/**
+    assert ".claude/context/save-system.md" in skill  # points to canonical doc
     assert "- .claude/context" not in skill.split("---")[1]  # doc not in paths:
 
     # Second run: everything up to date, nothing rewritten

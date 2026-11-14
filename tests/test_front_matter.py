@@ -97,7 +97,7 @@ def test_unicode_digits_never_crash():
 
 def test_quoted_item_with_comma_survives():
     meta, _, warnings = parse_front_matter(
-        '---\nkeywords: [a, "hello, world", b, \'x, y\']\n---\nbody'
+        "---\nkeywords: [a, \"hello, world\", b, 'x, y']\n---\nbody"
     )
     assert meta["keywords"] == ["a", "hello, world", "b", "x, y"]
     assert warnings == []
