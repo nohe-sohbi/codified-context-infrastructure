@@ -25,7 +25,11 @@ import sys
 from pathlib import Path
 
 from drift_common import (
-    project_root, subsystem_patterns, flag_drift, load_state, save_state,
+    flag_drift,
+    load_state,
+    project_root,
+    save_state,
+    subsystem_patterns,
 )
 
 MAX_TRANSCRIPT_LINES = 5000
@@ -54,8 +58,9 @@ def session_touched_files(transcript_path: str, root: Path):
                         continue
                     if item.get("name") not in EDIT_TOOLS:
                         continue
-                    file_path = item.get("input", {}).get("file_path") \
-                        or item.get("input", {}).get("notebook_path")
+                    file_path = item.get("input", {}).get("file_path") or item.get(
+                        "input", {}
+                    ).get("notebook_path")
                     if not file_path:
                         continue
                     try:
@@ -128,8 +133,10 @@ def main():
         flagged_keys = sorted(d["subsystem"] for d in drift)
         state = load_state(root)
         stop_state = state.get("stop_hook", {})
-        if stop_state.get("session_id") == session_id and \
-                stop_state.get("notified") == flagged_keys:
+        if (
+            stop_state.get("session_id") == session_id
+            and stop_state.get("notified") == flagged_keys
+        ):
             return
         state["stop_hook"] = {"session_id": session_id, "notified": flagged_keys}
         save_state(root, state)
@@ -138,12 +145,16 @@ def main():
         if os.environ.get("DRIFT_STOP_BLOCK") == "1":
             print(message, file=sys.stderr)
             sys.exit(2)  # block the stop; stderr is fed back to Claude
-        print(json.dumps({
-            "hookSpecificOutput": {
-                "hookEventName": "Stop",
-                "additionalContext": message,
-            }
-        }))
+        print(
+            json.dumps(
+                {
+                    "hookSpecificOutput": {
+                        "hookEventName": "Stop",
+                        "additionalContext": message,
+                    }
+                }
+            )
+        )
     except SystemExit:
         raise
     except Exception:  # noqa: BLE001

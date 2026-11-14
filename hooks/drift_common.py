@@ -18,7 +18,7 @@ _HOOKS_DIR = Path(__file__).resolve().parent
 sys.path.insert(0, str(_HOOKS_DIR.parent / "mcp-server"))
 
 try:
-    from context_retrieval_mcp.context_index import load_subsystems  # noqa: E402
+    from context_retrieval_mcp.context_index import load_subsystems
 except Exception:  # noqa: BLE001  # pragma: no cover - missing sibling package
     load_subsystems = None
 
@@ -55,12 +55,14 @@ def subsystem_patterns(root: Path) -> list:
             else:
                 code_patterns.append(f)
         if code_patterns and docs:
-            result.append({
-                "key": key,
-                "priority": info.get("priority", "medium"),
-                "code_patterns": code_patterns,
-                "docs": docs,
-            })
+            result.append(
+                {
+                    "key": key,
+                    "priority": info.get("priority", "medium"),
+                    "code_patterns": code_patterns,
+                    "docs": docs,
+                }
+            )
     return result
 
 
@@ -84,17 +86,21 @@ def flag_drift(patterns: list, code_files, touched_docs) -> list:
     for sub in patterns:
         if sub["priority"] == "low":
             continue
-        matched = sorted(f for f in code_files if match_code_file(f, sub["code_patterns"]))
+        matched = sorted(
+            f for f in code_files if match_code_file(f, sub["code_patterns"])
+        )
         if not matched:
             continue
         if sub["docs"] & set(touched_docs):
             continue
-        flagged.append({
-            "subsystem": sub["key"],
-            "priority": sub["priority"],
-            "code_files": matched[:3],
-            "expected_docs": sorted(sub["docs"])[:3],
-        })
+        flagged.append(
+            {
+                "subsystem": sub["key"],
+                "priority": sub["priority"],
+                "code_files": matched[:3],
+                "expected_docs": sorted(sub["docs"])[:3],
+            }
+        )
     # Deduplicate doc suggestions across subsystems (first wins)
     seen: set = set()
     deduped = []

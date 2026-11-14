@@ -35,7 +35,11 @@ import time
 from pathlib import Path
 
 from drift_common import (
-    project_root, subsystem_patterns, flag_drift, load_state, save_state,
+    flag_drift,
+    load_state,
+    project_root,
+    save_state,
+    subsystem_patterns,
 )
 
 try:
@@ -48,28 +52,56 @@ DEBUG_SCORE_THRESHOLD = 50
 DISMISS_MAX_SHOWS = 2
 
 DEBUG_KEYWORDS = [
-    "fix", "bug", "wrong", "broken", "doesn't work", "not working",
-    "still not", "why does", "why is", "issue", "crash", "exception",
-    "error", "null ref",
+    "fix",
+    "bug",
+    "wrong",
+    "broken",
+    "doesn't work",
+    "not working",
+    "still not",
+    "why does",
+    "why is",
+    "issue",
+    "crash",
+    "exception",
+    "error",
+    "null ref",
 ]
 
 DEFAULT_BUILD_CMDS = [
-    "dotnet build", "dotnet run", "npm run", "npm test", "yarn", "pnpm",
-    "cargo build", "cargo test", "go build", "go test", "make", "pytest",
-    "mvn", "gradle",
+    "dotnet build",
+    "dotnet run",
+    "npm run",
+    "npm test",
+    "yarn",
+    "pnpm",
+    "cargo build",
+    "cargo test",
+    "go build",
+    "go test",
+    "make",
+    "pytest",
+    "mvn",
+    "gradle",
 ]
 
 
 def build_cmds() -> list:
     env = os.environ.get("DRIFT_BUILD_CMDS")
-    return [c.strip() for c in env.split(",") if c.strip()] if env else DEFAULT_BUILD_CMDS
+    return (
+        [c.strip() for c in env.split(",") if c.strip()] if env else DEFAULT_BUILD_CMDS
+    )
 
 
 def git_head(root: Path) -> str | None:
     try:
         result = subprocess.run(
             ["git", "rev-parse", "HEAD"],
-            capture_output=True, text=True, timeout=2, cwd=root, check=False,
+            capture_output=True,
+            text=True,
+            timeout=2,
+            cwd=root,
+            check=False,
         )
         return result.stdout.strip() if result.returncode == 0 else None
     except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
@@ -81,7 +113,11 @@ def recent_commit_files(root: Path):
     try:
         result = subprocess.run(
             ["git", "log", f"--max-count={MAX_COMMITS}", "--name-only", "--format="],
-            capture_output=True, text=True, timeout=3, cwd=root, check=False,
+            capture_output=True,
+            text=True,
+            timeout=3,
+            cwd=root,
+            check=False,
         )
         if result.returncode != 0:
             return set(), set()
@@ -104,9 +140,19 @@ def recent_commit_files(root: Path):
     # until the docs are committed.
     try:
         status = subprocess.run(
-            ["git", "status", "--porcelain", "--untracked-files=all",
-             "--", ".claude/context"],
-            capture_output=True, text=True, timeout=3, cwd=root, check=False,
+            [
+                "git",
+                "status",
+                "--porcelain",
+                "--untracked-files=all",
+                "--",
+                ".claude/context",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=3,
+            cwd=root,
+            check=False,
         )
         if status.returncode == 0:
             for line in status.stdout.splitlines():
@@ -123,19 +169,20 @@ def recent_commit_files(root: Path):
 # Debug-heavy session detection (~/.claude/projects session logs)
 # ---------------------------------------------------------------------------
 
+
 def find_project_log_dirs(root: Path) -> list:
     claude_projects = Path.home() / ".claude" / "projects"
     if not claude_projects.is_dir():
         return []
     override = os.environ.get("DRIFT_PROJECT_NAME")
     if override:  # user-supplied needle: substring match
-        return [d for d in claude_projects.iterdir()
-                if d.is_dir() and override in d.name]
+        return [
+            d for d in claude_projects.iterdir() if d.is_dir() and override in d.name
+        ]
     # Derived from the project path: exact match only, so /home/u/proj never
     # picks up /home/u/proj-other's session logs
     derived = str(root).replace("/", "-").replace("\\", "-")
-    return [d for d in claude_projects.iterdir()
-            if d.is_dir() and d.name == derived]
+    return [d for d in claude_projects.iterdir() if d.is_dir() and d.name == derived]
 
 
 def analyze_last_sessions(log_dirs: list) -> dict | None:
@@ -190,7 +237,9 @@ def _analyze_single_session(filepath: Path) -> dict | None:
                         for item in content:
                             if isinstance(item, dict) and item.get("type") == "text":
                                 t = item.get("text", "")
-                                if not t.startswith("<ide_") and not t.startswith("<system"):
+                                if not t.startswith("<ide_") and not t.startswith(
+                                    "<system"
+                                ):
                                     text = t.lower()
                                     break
                     if text and any(kw in text for kw in DEBUG_KEYWORDS):
@@ -221,10 +270,10 @@ def _analyze_single_session(filepath: Path) -> dict | None:
     except (OSError, UnicodeDecodeError):
         return None
 
-    score = min(100,
-                (edit_build_cycles * 10) +
-                (debug_prompts * 5) +
-                (30 if build_count > 5 else 0))
+    score = min(
+        100,
+        (edit_build_cycles * 10) + (debug_prompts * 5) + (30 if build_count > 5 else 0),
+    )
     return {
         "score": score,
         "edit_build_cycles": edit_build_cycles,
@@ -236,6 +285,7 @@ def _analyze_single_session(filepath: Path) -> dict | None:
 # ---------------------------------------------------------------------------
 # Output
 # ---------------------------------------------------------------------------
+
 
 def format_output(drift: list, session_info: dict | None, times_shown: int) -> str:
     parts = []

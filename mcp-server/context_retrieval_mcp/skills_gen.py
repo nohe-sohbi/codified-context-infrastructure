@@ -22,7 +22,6 @@ Stdlib-only (hooks/scripts import this without the mcp SDK).
 from __future__ import annotations
 
 import re
-from pathlib import Path
 
 GENERATOR_MARKER = "generated-by: context-skills-gen/v1"
 SKILL_PREFIX = "ctx-"
@@ -31,7 +30,9 @@ DESCRIPTION_CAP = 1536  # platform cap for description (+when_to_use)
 
 def _slug(key: str) -> str:
     """Skill directory/name segment: lowercase, [a-z0-9-] only."""
-    return re.sub(r"-+", "-", re.sub(r"[^a-z0-9-]", "-", key.lower())).strip("-") or "doc"
+    return (
+        re.sub(r"-+", "-", re.sub(r"[^a-z0-9-]", "-", key.lower())).strip("-") or "doc"
+    )
 
 
 def _yaml_quote(value: str) -> str:
@@ -43,7 +44,9 @@ def _yaml_quote(value: str) -> str:
 def _render_description(info: dict, warnings: list, key: str) -> str:
     description = (info.get("description") or info.get("name") or key).strip()
     if len(description) > DESCRIPTION_CAP:
-        warnings.append(f"{key}: description exceeds {DESCRIPTION_CAP} chars — truncated")
+        warnings.append(
+            f"{key}: description exceeds {DESCRIPTION_CAP} chars — truncated"
+        )
         return description[: DESCRIPTION_CAP - 3] + "..."
 
     keywords = info.get("keywords") or []
@@ -108,12 +111,17 @@ def render_skill(key: str, info: dict, warnings: list, slug: str | None = None) 
     # some projects ban those characters in their tree, and regeneration
     # would keep reintroducing them.
     lines += [
-        (f"**Full spec:** Read `{doc}` for the complete specification. Do not "
-        "rely on this summary for implementation details."),
+        (
+            f"**Full spec:** Read `{doc}` for the complete specification. Do not "
+            "rely on this summary for implementation details."
+        ),
     ]
     related = info.get("related") or []
     if related:
-        lines += ["", "Related subsystems: " + ", ".join(f"`{r}`" for r in related) + "."]
+        lines += [
+            "",
+            "Related subsystems: " + ", ".join(f"`{r}`" for r in related) + ".",
+        ]
     return "\n".join(lines) + "\n"
 
 
@@ -124,8 +132,14 @@ def generate_skills(index, prune: bool = False, check: bool = False) -> dict:
     "pruned": [], "warnings": []}. In check mode nothing is written;
     `stale` lists what a real run would change (including prunes).
     """
-    result = {"written": [], "up_to_date": [], "stale": [], "skipped": [],
-              "pruned": [], "warnings": []}
+    result = {
+        "written": [],
+        "up_to_date": [],
+        "stale": [],
+        "skipped": [],
+        "pruned": [],
+        "warnings": [],
+    }
     skills_dir = index.project_root / ".claude" / "skills"
 
     expected_dirs = set()
@@ -174,7 +188,9 @@ def generate_skills(index, prune: bool = False, check: bool = False) -> dict:
             if entry.name in expected_dirs:
                 continue
             skill_file = entry / "SKILL.md"
-            if skill_file.is_file() and GENERATOR_MARKER in skill_file.read_text(encoding="utf-8"):
+            if skill_file.is_file() and GENERATOR_MARKER in skill_file.read_text(
+                encoding="utf-8"
+            ):
                 if check:
                     result["stale"].append(f"{entry.name} (orphan)")
                     continue

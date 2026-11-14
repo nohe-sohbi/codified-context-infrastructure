@@ -17,18 +17,27 @@ Usage:
 import ast
 import json
 import os
-import re
 import subprocess
 import sys
 import time
 from pathlib import Path
 
-
 # Debugging keywords (matches extract_prompts.py CATEGORIES['debugging'])
 DEBUG_KEYWORDS = [
-    "fix", "bug", "wrong", "broken", "doesn't work", "not working",
-    "still not", "why does", "why is", "issue", "crash", "exception",
-    "error", "null ref",
+    "fix",
+    "bug",
+    "wrong",
+    "broken",
+    "doesn't work",
+    "not working",
+    "still not",
+    "why does",
+    "why is",
+    "issue",
+    "crash",
+    "exception",
+    "error",
+    "null ref",
 ]
 
 MAX_COMMITS = 10
@@ -128,11 +137,13 @@ def parse_subsystems(server_py_path: Path) -> list:
                 code_patterns.append(f)
 
         if code_patterns and doc_basenames:
-            result.append({
-                "name": key,
-                "code_patterns": code_patterns,
-                "docs": doc_basenames,
-            })
+            result.append(
+                {
+                    "name": key,
+                    "code_patterns": code_patterns,
+                    "docs": doc_basenames,
+                }
+            )
 
     return result
 
@@ -142,7 +153,11 @@ def get_head_sha(repo_root: Path) -> str | None:
     try:
         result = subprocess.run(
             ["git", "rev-parse", "HEAD"],
-            capture_output=True, text=True, timeout=2, cwd=repo_root, check=False,
+            capture_output=True,
+            text=True,
+            timeout=2,
+            cwd=repo_root,
+            check=False,
         )
         if result.returncode == 0:
             return result.stdout.strip()
@@ -182,7 +197,11 @@ def detect_code_doc_drift(repo_root: Path, subsystems: list) -> list:
     try:
         result = subprocess.run(
             ["git", "log", f"--max-count={MAX_COMMITS}", "--name-only", "--format=%H"],
-            capture_output=True, text=True, timeout=2, cwd=repo_root, check=False,
+            capture_output=True,
+            text=True,
+            timeout=2,
+            cwd=repo_root,
+            check=False,
         )
         if result.returncode != 0:
             return []
@@ -216,7 +235,7 @@ def detect_code_doc_drift(repo_root: Path, subsystems: list) -> list:
             if f == "CLAUDE.md":
                 all_doc_basenames.add("CLAUDE.md")
             if f.startswith(engine_prefix) and not f.endswith(".md"):
-                all_code_files.add(f[len(engine_prefix):])
+                all_code_files.add(f[len(engine_prefix) :])
 
     # For each subsystem, check if its code was touched without its docs
     flagged = []
@@ -241,12 +260,14 @@ def detect_code_doc_drift(repo_root: Path, subsystems: list) -> list:
             priority = SUBSYSTEM_PRIORITY.get(sub["name"], "LOW")
             if priority == "LOW":
                 continue  # Suppress LOW priority drift entirely
-            flagged.append({
-                "subsystem": sub["name"],
-                "priority": priority,
-                "code_files": sorted(matched_code)[:3],
-                "expected_docs": missing_docs[:3],
-            })
+            flagged.append(
+                {
+                    "subsystem": sub["name"],
+                    "priority": priority,
+                    "code_files": sorted(matched_code)[:3],
+                    "expected_docs": missing_docs[:3],
+                }
+            )
 
     return flagged
 
@@ -257,8 +278,7 @@ def find_project_dirs() -> list[Path]:
     if not claude_projects.exists():
         return []
     return [
-        d for d in claude_projects.iterdir()
-        if d.is_dir() and "game-project" in d.name
+        d for d in claude_projects.iterdir() if d.is_dir() and "game-project" in d.name
     ]
 
 
@@ -329,7 +349,9 @@ def _analyze_single_session(filepath: Path) -> dict | None:
                         for item in content:
                             if isinstance(item, dict) and item.get("type") == "text":
                                 t = item.get("text", "")
-                                if not t.startswith("<ide_") and not t.startswith("<system"):
+                                if not t.startswith("<ide_") and not t.startswith(
+                                    "<system"
+                                ):
                                     text = t.lower()
                                     break
 
@@ -365,10 +387,9 @@ def _analyze_single_session(filepath: Path) -> dict | None:
     except (OSError, json.JSONDecodeError, UnicodeDecodeError):
         return None
 
-    score = min(100,
-        (edit_build_cycles * 10) +
-        (debug_prompts * 5) +
-        (30 if build_count > 5 else 0)
+    score = min(
+        100,
+        (edit_build_cycles * 10) + (debug_prompts * 5) + (30 if build_count > 5 else 0),
     )
 
     return {
@@ -394,17 +415,25 @@ def format_output(drift: list, session_info: dict | None, times_shown: int = 0) 
         if high:
             lines = [f"CONTEXT DRIFT [HIGH — auto-update recommended] {dismiss_note}:"]
             for item in high[:3]:
-                code_examples = ", ".join(os.path.basename(f) for f in item["code_files"][:2])
+                code_examples = ", ".join(
+                    os.path.basename(f) for f in item["code_files"][:2]
+                )
                 docs = ", ".join(item["expected_docs"][:3])
-                lines.append(f"  - {item['subsystem']} ({code_examples}) -> update: {docs}")
+                lines.append(
+                    f"  - {item['subsystem']} ({code_examples}) -> update: {docs}"
+                )
             parts.append("\n".join(lines))
 
         if medium:
             lines = [f"CONTEXT DRIFT [MEDIUM — mention to user] {dismiss_note}:"]
             for item in medium[:3]:
-                code_examples = ", ".join(os.path.basename(f) for f in item["code_files"][:2])
+                code_examples = ", ".join(
+                    os.path.basename(f) for f in item["code_files"][:2]
+                )
                 docs = ", ".join(item["expected_docs"][:3])
-                lines.append(f"  - {item['subsystem']} ({code_examples}) -> consider: {docs}")
+                lines.append(
+                    f"  - {item['subsystem']} ({code_examples}) -> consider: {docs}"
+                )
             parts.append("\n".join(lines))
 
     if session_info and session_info["score"] >= DEBUG_SCORE_THRESHOLD:
@@ -431,7 +460,9 @@ def main():
         if "--dismiss" in sys.argv:
             head = get_head_sha(repo_root)
             if head:
-                save_state(repo_root, {"head_sha": head, "times_shown": DISMISS_MAX_SHOWS})
+                save_state(
+                    repo_root, {"head_sha": head, "times_shown": DISMISS_MAX_SHOWS}
+                )
                 print(f"Drift warnings dismissed at {head[:8]}.")
             return
 
@@ -469,7 +500,9 @@ def main():
                     drift = []  # Auto-dismiss: already shown N times
                 else:
                     times_shown += 1
-                    save_state(repo_root, {"head_sha": head, "times_shown": times_shown})
+                    save_state(
+                        repo_root, {"head_sha": head, "times_shown": times_shown}
+                    )
             else:
                 # New HEAD — reset counter, show fresh (count this as showing 1)
                 times_shown = 1

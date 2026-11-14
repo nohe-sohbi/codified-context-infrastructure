@@ -60,16 +60,15 @@ except ImportError:
                 return lambda fn: fn
 
             def run(self, *_a, **_k):
-                raise SystemExit(
-                    "The mcp SDK is required to serve: pip install mcp"
-                )
+                raise SystemExit("The mcp SDK is required to serve: pip install mcp")
+
 
 try:  # package mode (pip install / python -m)
-    from .matching import tokenize, term_counts, score_terms, description_bonus
     from .context_index import load_index
+    from .matching import description_bonus, score_terms, term_counts, tokenize
 except ImportError:  # direct-run mode (python3 server.py)
-    from matching import tokenize, term_counts, score_terms, description_bonus
     from context_index import load_index
+    from matching import description_bonus, score_terms, term_counts, tokenize
 
 VERSION = "2.0.0"
 
@@ -90,6 +89,7 @@ mcp = FastMCP("Context Retrieval")
 # =============================================================================
 # Retrieval tools
 # =============================================================================
+
 
 @mcp.tool()
 def list_subsystems() -> dict:
@@ -154,9 +154,7 @@ def find_relevant_context(task_description: str) -> dict:
     task_words = tokenize(task_description)
 
     # Keyword uniqueness across subsystems (same philosophy as suggest_agent)
-    keyword_counts = term_counts(
-        info["keywords"] for info in INDEX.subsystems.values()
-    )
+    keyword_counts = term_counts(info["keywords"] for info in INDEX.subsystems.values())
 
     matches = []
     for key, info in INDEX.subsystems.items():
@@ -167,13 +165,15 @@ def find_relevant_context(task_description: str) -> dict:
             score += 2
 
         if score > 0:
-            matches.append({
-                "subsystem": key,
-                "name": info["name"],
-                "score": score,
-                "matched_keywords": matched_keywords,
-                "files": info["files"],
-            })
+            matches.append(
+                {
+                    "subsystem": key,
+                    "name": info["name"],
+                    "score": score,
+                    "matched_keywords": matched_keywords,
+                    "files": info["files"],
+                }
+            )
 
     matches.sort(key=lambda x: x["score"], reverse=True)
 
@@ -207,14 +207,16 @@ def get_context_files() -> dict:
 
     files = []
     for key, info in INDEX.subsystems.items():
-        files.append({
-            "subsystem": key,
-            "file": info["doc"],
-            "description": info["description"],
-            "priority": info["priority"],
-            "last_verified": info["last_verified"],
-            "resource_uri": f"context://{key}",
-        })
+        files.append(
+            {
+                "subsystem": key,
+                "file": info["doc"],
+                "description": info["description"],
+                "priority": info["priority"],
+                "last_verified": info["last_verified"],
+                "resource_uri": f"context://{key}",
+            }
+        )
     return {"count": len(files), "context_files": files}
 
 
@@ -245,19 +247,23 @@ def search_context_documents(query: str) -> dict:
                 if query_lower in line.lower():
                     start = max(0, i - 2)
                     end = min(len(lines), i + 3)
-                    doc_matches.append({
-                        "line_number": i + 1,
-                        "context": "\n".join(lines[start:end]),
-                    })
+                    doc_matches.append(
+                        {
+                            "line_number": i + 1,
+                            "context": "\n".join(lines[start:end]),
+                        }
+                    )
                     if len(doc_matches) >= 10:
                         break
 
             if doc_matches:
-                results.append({
-                    "file": f".claude/context/{doc.name}",
-                    "match_count": len(doc_matches),
-                    "matches": doc_matches,
-                })
+                results.append(
+                    {
+                        "file": f".claude/context/{doc.name}",
+                        "match_count": len(doc_matches),
+                        "matches": doc_matches,
+                    }
+                )
 
     # Also match subsystem names/descriptions/keywords
     subsystem_matches = [
@@ -279,6 +285,7 @@ def search_context_documents(query: str) -> dict:
 # Agent routing tools
 # =============================================================================
 
+
 @mcp.tool()
 def suggest_agent(task_description: str) -> dict:
     """
@@ -294,9 +301,7 @@ def suggest_agent(task_description: str) -> dict:
     task_lower = task_description.lower()
     task_words = tokenize(task_description)
 
-    trigger_counts = term_counts(
-        info["triggers"] for info in INDEX.agents.values()
-    )
+    trigger_counts = term_counts(info["triggers"] for info in INDEX.agents.values())
 
     matches = []
     for agent_id, info in INDEX.agents.items():
@@ -306,23 +311,24 @@ def suggest_agent(task_description: str) -> dict:
         score += description_bonus(task_words, info["description"])
 
         if score > 0:
-            matches.append({
-                "agent": agent_id,
-                "name": info["name"],
-                "description": info["description"],
-                "model": info["model"],
-                "score": score,
-                "matched_triggers": matched_triggers,
-            })
+            matches.append(
+                {
+                    "agent": agent_id,
+                    "name": info["name"],
+                    "description": info["description"],
+                    "model": info["model"],
+                    "score": score,
+                    "matched_triggers": matched_triggers,
+                }
+            )
 
     matches.sort(key=lambda x: x["score"], reverse=True)
 
     top_score = matches[0]["score"] if matches else 0
     confidence = (
-        "high" if top_score >= 4
-        else "medium" if top_score >= 2
-        else "low" if top_score >= 1
-        else "none"
+        "high"
+        if top_score >= 4
+        else "medium" if top_score >= 2 else "low" if top_score >= 1 else "none"
     )
 
     result = {
@@ -367,6 +373,7 @@ def list_agents() -> dict:
 # Introspection
 # =============================================================================
 
+
 @mcp.tool()
 def get_index_status() -> dict:
     """
@@ -385,6 +392,7 @@ def get_index_status() -> dict:
 # Resources
 # =============================================================================
 
+
 @mcp.resource("context://index")
 def get_index_resource() -> str:
     """The full resolved index as JSON."""
@@ -400,7 +408,9 @@ def get_subsystem_doc(subsystem: str) -> str:
     INDEX.refresh()
     info = INDEX.subsystems.get(subsystem)
     if not info:
-        return f"Unknown subsystem: {subsystem}. Available: {', '.join(INDEX.subsystems)}"
+        return (
+            f"Unknown subsystem: {subsystem}. Available: {', '.join(INDEX.subsystems)}"
+        )
     doc_path = INDEX.project_root / info["doc"]
     try:
         return doc_path.read_text(encoding="utf-8")
@@ -448,7 +458,10 @@ def plan_serve(sdk_available, env):
     if override:
         return ("reexec", override)
     if env.get(NO_BOOTSTRAP):
-        return ("fail", f"the mcp SDK is required to serve and ${NO_BOOTSTRAP} is set. {MANUAL_FIX}")
+        return (
+            "fail",
+            f"the mcp SDK is required to serve and ${NO_BOOTSTRAP} is set. {MANUAL_FIX}",
+        )
     return ("bootstrap", None)
 
 
@@ -466,9 +479,11 @@ def _log(message):
 
 
 def _run(cmd):
-    done = subprocess.run([str(c) for c in cmd], capture_output=True, text=True, check=False)
+    done = subprocess.run(
+        [str(c) for c in cmd], capture_output=True, text=True, check=False
+    )
     if done.returncode != 0:
-        detail = (done.stderr.strip() or done.stdout.strip() or "no output")
+        detail = done.stderr.strip() or done.stdout.strip() or "no output"
         raise SystemExit(
             f"[context-retrieval] `{' '.join(str(c) for c in cmd)}` failed:\n"
             f"{detail}\n{MANUAL_FIX}"
@@ -481,13 +496,28 @@ def provision_venv():
     uv = shutil.which("uv")
     if not python.exists():
         _log(f"mcp SDK missing — provisioning {python.parent.parent}")
-        _run([uv, "venv", "--python", sys.executable, python.parent.parent] if uv
-             else [sys.executable, "-m", "venv", python.parent.parent])
-    if subprocess.run([str(python), "-c", "import mcp"], capture_output=True, check=False).returncode:
+        _run(
+            [uv, "venv", "--python", sys.executable, python.parent.parent]
+            if uv
+            else [sys.executable, "-m", "venv", python.parent.parent]
+        )
+    if subprocess.run(
+        [str(python), "-c", "import mcp"], capture_output=True, check=False
+    ).returncode:
         _log("installing mcp>=1.0.0")
-        _run([uv, "pip", "install", "--python", python, "mcp>=1.0.0"] if uv
-             else [python, "-m", "pip", "install", "--quiet",
-                   "--disable-pip-version-check", "mcp>=1.0.0"])
+        _run(
+            [uv, "pip", "install", "--python", python, "mcp>=1.0.0"]
+            if uv
+            else [
+                python,
+                "-m",
+                "pip",
+                "install",
+                "--quiet",
+                "--disable-pip-version-check",
+                "mcp>=1.0.0",
+            ]
+        )
     return python
 
 
@@ -511,6 +541,7 @@ def ensure_serving_sdk():
 # Entry Point
 # =============================================================================
 
+
 def main():
     """CLI entry point: run the MCP server, or inspect the index."""
     parser = argparse.ArgumentParser(
@@ -521,14 +552,16 @@ def main():
         "--print-index",
         action="store_true",
         help="Dump the resolved SUBSYSTEMS/AGENTS index as JSON and exit "
-             "(smoke test and escape hatch for non-MCP consumers).",
+        "(smoke test and escape hatch for non-MCP consumers).",
     )
     parser.add_argument(
         "--project-root",
         help="Index this directory instead of auto-resolving "
-             "(equivalent to $CONTEXT_MCP_PROJECT_ROOT).",
+        "(equivalent to $CONTEXT_MCP_PROJECT_ROOT).",
     )
-    parser.add_argument("--version", action="store_true", help="Print version and exit.")
+    parser.add_argument(
+        "--version", action="store_true", help="Print version and exit."
+    )
     args = parser.parse_args()
 
     global INDEX

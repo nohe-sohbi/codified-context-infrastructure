@@ -13,7 +13,7 @@ session hooks can import it under a bare python3):
 from __future__ import annotations
 
 import re
-from typing import Iterable
+from collections.abc import Iterable
 
 
 def tokenize(text: str) -> set:

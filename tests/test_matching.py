@@ -1,5 +1,8 @@
 from context_retrieval_mcp.matching import (
-    tokenize, term_counts, score_terms, description_bonus,
+    description_bonus,
+    score_terms,
+    term_counts,
+    tokenize,
 )
 
 
@@ -42,10 +45,13 @@ def test_uniqueness_bonus_prefers_rare_terms():
 
 def test_match_code_file_no_suffix_overmatch():
     from drift_common import match_code_file
-    assert match_code_file("src/services/save_service.py",
-                           ["src/services/save_service.py"])
-    assert not match_code_file("vendor/src/services/save_service.py",
-                               ["src/services/save_service.py"])
+
+    assert match_code_file(
+        "src/services/save_service.py", ["src/services/save_service.py"]
+    )
+    assert not match_code_file(
+        "vendor/src/services/save_service.py", ["src/services/save_service.py"]
+    )
     assert match_code_file("src/network/deep/sync.py", ["src/network/"])
     assert not match_code_file("other/src/network/sync.py", ["src/network/"])
 

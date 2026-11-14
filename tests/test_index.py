@@ -2,10 +2,13 @@ import os
 import shutil
 import subprocess
 import sys
-import time
-from pathlib import Path
 
-from context_retrieval_mcp.context_index import Index, load_subsystems, load_agents, resolve_project_root
+from context_retrieval_mcp.context_index import (
+    Index,
+    load_agents,
+    load_subsystems,
+    resolve_project_root,
+)
 
 
 def test_fixture_scan(fixture_project):
@@ -78,8 +81,11 @@ def test_hostile_docs_warn_but_never_crash(fixture_project, tmp_path):
 
 def test_extra_dicts_normalized_missing_keys(fixture_project):
     # v1-compat extras with missing keys must not KeyError any consumer
-    index = Index(fixture_project, extra_subsystems={"bare": {}},
-                  extra_agents={"bare-agent": {"description": "only desc"}})
+    index = Index(
+        fixture_project,
+        extra_subsystems={"bare": {}},
+        extra_agents={"bare-agent": {"description": "only desc"}},
+    )
     sub = index.subsystems["bare"]
     assert sub["keywords"] == [] and sub["files"] == [] and sub["priority"] == "medium"
     agent = index.agents["bare-agent"]
@@ -88,12 +94,28 @@ def test_extra_dicts_normalized_missing_keys(fixture_project):
 
 def test_extra_dicts_sit_under_front_matter(fixture_project):
     extra = {
-        "save-system": {"name": "OVERRIDDEN", "description": "", "keywords": [],
-                        "files": [], "priority": "low", "related": [],
-                        "doc": "", "version": None, "last_verified": None},
-        "v1-only": {"name": "V1 Only", "description": "from EXTRA dict",
-                    "keywords": ["v1"], "files": [], "priority": "medium",
-                    "related": [], "doc": "", "version": None, "last_verified": None},
+        "save-system": {
+            "name": "OVERRIDDEN",
+            "description": "",
+            "keywords": [],
+            "files": [],
+            "priority": "low",
+            "related": [],
+            "doc": "",
+            "version": None,
+            "last_verified": None,
+        },
+        "v1-only": {
+            "name": "V1 Only",
+            "description": "from EXTRA dict",
+            "keywords": ["v1"],
+            "files": [],
+            "priority": "medium",
+            "related": [],
+            "doc": "",
+            "version": None,
+            "last_verified": None,
+        },
     }
     index = Index(fixture_project, extra_subsystems=extra)
     # front-matter wins on collision, extras still present
@@ -136,7 +158,11 @@ def test_stdlib_only_import_without_mcp(repo_root):
     )
     env = dict(os.environ, PYTHONPATH=str(repo_root / "mcp-server"))
     result = subprocess.run(
-        [sys.executable, "-c", code], capture_output=True, text=True, env=env, check=False
+        [sys.executable, "-c", code],
+        capture_output=True,
+        text=True,
+        env=env,
+        check=False,
     )
     assert result.returncode == 0, result.stderr
     assert result.stdout.strip() == "ok"

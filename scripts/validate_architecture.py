@@ -31,8 +31,8 @@ import sys
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent / "mcp-server"))
-from context_retrieval_mcp.context_index import load_index  # noqa: E402
-from context_retrieval_mcp.skills_gen import generate_skills, SKILL_PREFIX  # noqa: E402
+from context_retrieval_mcp.context_index import load_index
+from context_retrieval_mcp.skills_gen import SKILL_PREFIX, generate_skills
 
 
 def check_files(index, errors: list, warnings: list) -> None:
@@ -78,7 +78,11 @@ def check_trigger_dilution(index, warnings: list, max_agents: int = 3) -> None:
 def check_generated_tables(index, warnings: list) -> None:
     try:
         sys.path.insert(0, str(Path(__file__).resolve().parent))
-        from generate_reference_table import render_subsystem_table, render_agent_table, splice
+        from generate_reference_table import (
+            render_agent_table,
+            render_subsystem_table,
+            splice,
+        )
     except ImportError:
         return
     for candidate in ("AGENTS.md", "CLAUDE.md"):
@@ -95,7 +99,9 @@ def check_generated_tables(index, warnings: list) -> None:
             updated, ok = splice(updated, block, content)
             spliced_any = spliced_any or ok
         if spliced_any and updated != original:
-            warnings.append(f"{candidate}: generated tables are stale — run generate_reference_table.py")
+            warnings.append(
+                f"{candidate}: generated tables are stale — run generate_reference_table.py"
+            )
         if spliced_any:
             return  # first constitution with markers wins
 
@@ -104,18 +110,23 @@ def check_generated_skills(index, warnings: list) -> None:
     skills_dir = index.project_root / ".claude" / "skills"
     if not skills_dir.is_dir():
         return
-    if not any(d.name.startswith(SKILL_PREFIX) for d in skills_dir.iterdir() if d.is_dir()):
+    if not any(
+        d.name.startswith(SKILL_PREFIX) for d in skills_dir.iterdir() if d.is_dir()
+    ):
         return  # project doesn't use generated skills
     result = generate_skills(index, prune=True, check=True)
     for key in result["stale"]:
-        warnings.append(f"generated skill stale/missing for '{key}' — run generate_skills.py")
+        warnings.append(
+            f"generated skill stale/missing for '{key}' — run generate_skills.py"
+        )
 
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__.splitlines()[0])
     parser.add_argument("--project-root", type=Path, default=None)
-    parser.add_argument("--strict", action="store_true",
-                        help="Treat warnings as errors.")
+    parser.add_argument(
+        "--strict", action="store_true", help="Treat warnings as errors."
+    )
     args = parser.parse_args()
 
     index = load_index(args.project_root.resolve() if args.project_root else None)

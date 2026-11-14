@@ -8,6 +8,7 @@ project architecture and files when starting new tasks.
 import logging
 import re
 from pathlib import Path
+
 from mcp.server.fastmcp import FastMCP
 
 # Suppress verbose MCP logging
@@ -43,7 +44,23 @@ SUBSYSTEMS = {
     "services": {
         "name": "Service Layer",
         "description": "Dependency injection and core services",
-        "keywords": ["service", "container", "injection", "interface", "collision", "spatial", "content", "audio", "profile", "save", "damage", "feedback", "lighting", "shader", "input"],
+        "keywords": [
+            "service",
+            "container",
+            "injection",
+            "interface",
+            "collision",
+            "spatial",
+            "content",
+            "audio",
+            "profile",
+            "save",
+            "damage",
+            "feedback",
+            "lighting",
+            "shader",
+            "input",
+        ],
         "files": [
             "Services/ServiceContainer.cs",
             "Services/Interfaces/",
@@ -53,7 +70,21 @@ SUBSYSTEMS = {
     "game-states": {
         "name": "Game States",
         "description": "State machine for game modes, menus, and lobby",
-        "keywords": ["state", "menu", "lobby", "survival", "adventure", "defense", "payload", "boss", "hub", "shop", "playmenu", "profile", "multiplayer"],
+        "keywords": [
+            "state",
+            "menu",
+            "lobby",
+            "survival",
+            "adventure",
+            "defense",
+            "payload",
+            "boss",
+            "hub",
+            "shop",
+            "playmenu",
+            "profile",
+            "multiplayer",
+        ],
         "files": [
             "GameStates/IGameState.cs",
             "GameStates/GameStateManager.cs",
@@ -66,7 +97,29 @@ SUBSYSTEMS = {
     "networking": {
         "name": "Networking",
         "description": "Multiplayer networking with host-authoritative P2P model and MessagePack serialization",
-        "keywords": ["network", "multiplayer", "sync", "snapshot", "interpolation", "message", "transport", "lobby", "host", "client", "authority", "damage report", "play mode", "offline", "online", "couch coop", "local multiplayer", "messagepack", "serialization", "serialize", "deserialize"],
+        "keywords": [
+            "network",
+            "multiplayer",
+            "sync",
+            "snapshot",
+            "interpolation",
+            "message",
+            "transport",
+            "lobby",
+            "host",
+            "client",
+            "authority",
+            "damage report",
+            "play mode",
+            "offline",
+            "online",
+            "couch coop",
+            "local multiplayer",
+            "messagepack",
+            "serialization",
+            "serialize",
+            "deserialize",
+        ],
         "files": [
             "Network/NetworkService.cs",
             "Network/INetworkService.cs",
@@ -91,7 +144,16 @@ SUBSYSTEMS = {
     "physics": {
         "name": "Physics & Collision",
         "description": "Physics simulation and collision detection",
-        "keywords": ["physics", "collision", "velocity", "force", "knockback", "spatial", "raycast", "obstacle"],
+        "keywords": [
+            "physics",
+            "collision",
+            "velocity",
+            "force",
+            "knockback",
+            "spatial",
+            "raycast",
+            "obstacle",
+        ],
         "files": [
             "ECS/Systems/PhysicsSystem.cs",
             "Services/Implementation/CollisionService.cs",
@@ -104,8 +166,24 @@ SUBSYSTEMS = {
     "rendering": {
         "name": "Rendering",
         "description": "Sprite rendering, animation, camera, and procedural shape generation (SkiaSharp)",
-        "keywords": ["render", "sprite", "animation", "camera", "draw", "texture", "particle", "trail",
-                     "skiasharp", "procedural", "shape", "rounded", "gradient", "ninepatch", "9-slice", "emoji"],
+        "keywords": [
+            "render",
+            "sprite",
+            "animation",
+            "camera",
+            "draw",
+            "texture",
+            "particle",
+            "trail",
+            "skiasharp",
+            "procedural",
+            "shape",
+            "rounded",
+            "gradient",
+            "ninepatch",
+            "9-slice",
+            "emoji",
+        ],
         "files": [
             "ECS/Systems/SpriteRenderSystem.cs",
             "ECS/Systems/AnimationSystem.cs",
@@ -123,7 +201,25 @@ SUBSYSTEMS = {
     "ai": {
         "name": "AI System",
         "description": "Enemy AI behaviors and enemy archetype designs",
-        "keywords": ["ai", "behavior", "chase", "wander", "flee", "enemy", "aggro", "target", "archetype", "saboteur", "bloater", "ironclad", "hexweaver", "bonecaller", "webspinner", "blinkfiend", "phaselurk"],
+        "keywords": [
+            "ai",
+            "behavior",
+            "chase",
+            "wander",
+            "flee",
+            "enemy",
+            "aggro",
+            "target",
+            "archetype",
+            "saboteur",
+            "bloater",
+            "ironclad",
+            "hexweaver",
+            "bonecaller",
+            "webspinner",
+            "blinkfiend",
+            "phaselurk",
+        ],
         "files": [
             "ECS/Systems/AISystem.cs",
             "ECS/Components/AIComponent.cs",
@@ -133,7 +229,29 @@ SUBSYSTEMS = {
     "combat": {
         "name": "Combat",
         "description": "Combat, projectiles, abilities, damage, ghost mode, and deterministic RNG",
-        "keywords": ["combat", "damage", "health", "projectile", "ability", "attack", "weapon", "powerup", "death", "kill", "ghost", "spectator", "crit", "critical", "proc", "rng", "deterministic", "combatRng", "shotNumber", "subIndex", "timeBucket"],
+        "keywords": [
+            "combat",
+            "damage",
+            "health",
+            "projectile",
+            "ability",
+            "attack",
+            "weapon",
+            "powerup",
+            "death",
+            "kill",
+            "ghost",
+            "spectator",
+            "crit",
+            "critical",
+            "proc",
+            "rng",
+            "deterministic",
+            "combatRng",
+            "shotNumber",
+            "subIndex",
+            "timeBucket",
+        ],
         "files": [
             "ECS/Systems/CombatSystem.cs",
             "ECS/Systems/ProjectileSystem.cs",
@@ -160,7 +278,20 @@ SUBSYSTEMS = {
     "turbo": {
         "name": "Turbo System",
         "description": "3-bar turbo gauge: dodge (i-frames, destructible breaking) and hold-to-charge abilities (TurboShot, StompAoE, TurboBall)",
-        "keywords": ["turbo", "dash", "dodge", "invulnerable", "i-frame", "iframes", "turboshot", "turboball", "stomp", "charge", "recharge", "gauge"],
+        "keywords": [
+            "turbo",
+            "dash",
+            "dodge",
+            "invulnerable",
+            "i-frame",
+            "iframes",
+            "turboshot",
+            "turboball",
+            "stomp",
+            "charge",
+            "recharge",
+            "gauge",
+        ],
         "files": [
             "ECS/Components/Player/TurboGaugeComponent.cs",
             "ECS/Components/Player/TurboAbilityConfigComponent.cs",
@@ -175,7 +306,18 @@ SUBSYSTEMS = {
     "damage": {
         "name": "Damage Authority",
         "description": "Host-authoritative damage validation and health synchronization",
-        "keywords": ["damage", "health", "authority", "validate", "sync", "prediction", "reconciliation", "death", "kill", "batch"],
+        "keywords": [
+            "damage",
+            "health",
+            "authority",
+            "validate",
+            "sync",
+            "prediction",
+            "reconciliation",
+            "death",
+            "kill",
+            "batch",
+        ],
         "files": [
             "ECS/Systems/DamageAuthoritySystem.cs",
             "ECS/Systems/CombatSystem.cs",
@@ -201,7 +343,19 @@ SUBSYSTEMS = {
     "boss": {
         "name": "Boss Fight Framework",
         "description": "Multi-phase boss fights with attack pools, minion spawning, enrage, vulnerability, and shield mechanics",
-        "keywords": ["boss", "phase", "enrage", "vulnerability", "shield", "minion", "signature", "attack pool", "multi-phase", "infernus", "dragon"],
+        "keywords": [
+            "boss",
+            "phase",
+            "enrage",
+            "vulnerability",
+            "shield",
+            "minion",
+            "signature",
+            "attack pool",
+            "multi-phase",
+            "infernus",
+            "dragon",
+        ],
         "files": [
             "ECS/Components/Enemy/BossComponent.cs",
             "ECS/Components/Enemy/BossAttackPoolComponent.cs",
@@ -219,10 +373,30 @@ SUBSYSTEMS = {
         "name": "Procedural Dungeon Generation",
         "description": "BSP + Graph-based procedural dungeon generator for Adventure mode",
         "keywords": [
-            "dungeon", "procedural", "generation", "bsp", "room", "corridor",
-            "graph", "path", "secret", "template", "micro-template", "populator",
-            "adventure", "level", "tile", "door", "key", "treasure", "validation",
-            "connectivity", "loop", "interconnected", "dead-end", "target"
+            "dungeon",
+            "procedural",
+            "generation",
+            "bsp",
+            "room",
+            "corridor",
+            "graph",
+            "path",
+            "secret",
+            "template",
+            "micro-template",
+            "populator",
+            "adventure",
+            "level",
+            "tile",
+            "door",
+            "key",
+            "treasure",
+            "validation",
+            "connectivity",
+            "loop",
+            "interconnected",
+            "dead-end",
+            "target",
         ],
         "files": [
             "Procedural/IDungeonGenerator.cs",
@@ -244,7 +418,18 @@ SUBSYSTEMS = {
     "input": {
         "name": "Input",
         "description": "Input handling with keyboard, mouse, and gamepad support including isometric rotation",
-        "keywords": ["input", "keyboard", "controller", "gamepad", "controls", "isometric", "rotation", "direction", "wasd", "cardinal"],
+        "keywords": [
+            "input",
+            "keyboard",
+            "controller",
+            "gamepad",
+            "controls",
+            "isometric",
+            "rotation",
+            "direction",
+            "wasd",
+            "cardinal",
+        ],
         "files": [
             "Input/",
             "ECS/Systems/InputSystem.cs",
@@ -256,7 +441,23 @@ SUBSYSTEMS = {
     "aiming": {
         "name": "Aiming System",
         "description": "Mouse/gamepad aiming with isometric coordinate transforms, camera timing, and network determinism",
-        "keywords": ["aim", "aiming", "mouse", "target", "fire", "shoot", "projectile", "screen", "world", "coordinate", "isometric", "camera", "determinism", "autofire", "manual"],
+        "keywords": [
+            "aim",
+            "aiming",
+            "mouse",
+            "target",
+            "fire",
+            "shoot",
+            "projectile",
+            "screen",
+            "world",
+            "coordinate",
+            "isometric",
+            "camera",
+            "determinism",
+            "autofire",
+            "manual",
+        ],
         "files": [
             "ECS/Systems/ProjectileSystem.cs",
             "ECS/Systems/CameraSystem.cs",
@@ -271,7 +472,29 @@ SUBSYSTEMS = {
     "devtools": {
         "name": "Developer Tools",
         "description": "CLI utilities for testing, debugging, dungeon preview, HUD preview, headless rendering, layout validation, screenshot capture, and entity state dumping",
-        "keywords": ["devtools", "debug", "preview", "dungeon", "seed", "network", "test", "export", "verbose", "png", "image", "ascii", "csv", "visualization", "hud", "headless", "render", "screenshot", "dump", "validate", "font"],
+        "keywords": [
+            "devtools",
+            "debug",
+            "preview",
+            "dungeon",
+            "seed",
+            "network",
+            "test",
+            "export",
+            "verbose",
+            "png",
+            "image",
+            "ascii",
+            "csv",
+            "visualization",
+            "hud",
+            "headless",
+            "render",
+            "screenshot",
+            "dump",
+            "validate",
+            "font",
+        ],
         "files": [
             "../GameProject.DevTools/Program.cs",
             "../GameProject.DevTools/DungeonPreview/DungeonPreviewRunner.cs",
@@ -294,7 +517,22 @@ SUBSYSTEMS = {
     "dungeon-debug": {
         "name": "Dungeon Debug & Export",
         "description": "In-game debug overlay rendering, dungeon export to PNG/text/JSON, metadata logging",
-        "keywords": ["debug", "overlay", "render", "export", "metadata", "json", "png", "text", "visualization", "dungeon", "room", "corridor", "spawner", "portal"],
+        "keywords": [
+            "debug",
+            "overlay",
+            "render",
+            "export",
+            "metadata",
+            "json",
+            "png",
+            "text",
+            "visualization",
+            "dungeon",
+            "room",
+            "corridor",
+            "spawner",
+            "portal",
+        ],
         "files": [
             "Procedural/Debug/DungeonDebugRenderer.cs",
             "Procedural/Debug/DungeonExportService.cs",
@@ -303,7 +541,16 @@ SUBSYSTEMS = {
     "debug-console": {
         "name": "Debug Console",
         "description": "In-game debug console for testing and development (F12 or backtick to toggle)",
-        "keywords": ["debug", "console", "command", "spawn", "powerup", "godmode", "kill", "cheat"],
+        "keywords": [
+            "debug",
+            "console",
+            "command",
+            "spawn",
+            "powerup",
+            "godmode",
+            "kill",
+            "cheat",
+        ],
         "files": [
             "UI/Debug/DebugConsole.cs",
             "UI/Debug/IDebugCommand.cs",
@@ -313,7 +560,20 @@ SUBSYSTEMS = {
     "tiled-templates": {
         "name": "Tiled Room Templates",
         "description": "Hand-crafted room templates from Tiled Map Editor for dungeon generation",
-        "keywords": ["tiled", "template", "tmx", "tsx", "room", "boss", "treasure", "secret", "tileset", "map", "editor", "hand-crafted"],
+        "keywords": [
+            "tiled",
+            "template",
+            "tmx",
+            "tsx",
+            "room",
+            "boss",
+            "treasure",
+            "secret",
+            "tileset",
+            "map",
+            "editor",
+            "hand-crafted",
+        ],
         "files": [
             "Procedural/Templates/TiledRoomLoader.cs",
             "Procedural/Templates/RoomTemplateRegistry.cs",
@@ -325,7 +585,19 @@ SUBSYSTEMS = {
     "content": {
         "name": "Content & Assets",
         "description": "Asset loading and management, art pipeline (Meshy, Blender, atlas packing)",
-        "keywords": ["content", "asset", "texture", "font", "sound", "definition", "load", "pipeline", "meshy", "blender", "atlas"],
+        "keywords": [
+            "content",
+            "asset",
+            "texture",
+            "font",
+            "sound",
+            "definition",
+            "load",
+            "pipeline",
+            "meshy",
+            "blender",
+            "atlas",
+        ],
         "files": [
             "Services/Implementation/ContentService.cs",
             "Services/Interfaces/IContentService.cs",
@@ -337,7 +609,17 @@ SUBSYSTEMS = {
     "audio": {
         "name": "Audio System",
         "description": "Sound effect loading, playback, and WAV generation for MonoGame",
-        "keywords": ["audio", "sound", "wav", "sfx", "music", "play", "volume", "soundeffect", "soundnames"],
+        "keywords": [
+            "audio",
+            "sound",
+            "wav",
+            "sfx",
+            "music",
+            "play",
+            "volume",
+            "soundeffect",
+            "soundnames",
+        ],
         "files": [
             "Services/Implementation/ContentService.cs",
             "Services/Audio/SoundNames.cs",
@@ -349,10 +631,33 @@ SUBSYSTEMS = {
         "name": "Collectible System",
         "description": "Instant and permanent pickup effects: StatScroll, Food, Stopwatch, LevelUpBook, APOrb. Drops from enemies via JSON-driven drop tables.",
         "keywords": [
-            "collectible", "pickup", "statscroll", "scroll", "food", "heal", "stopwatch",
-            "cooldown", "levelbook", "level up", "ap orb", "augment", "permanent", "instant",
-            "tier", "minor", "standard", "greater", "snack", "meal", "feast", "drop", "loot",
-            "drop table", "enemy drop", "boss drop", "elite drop"
+            "collectible",
+            "pickup",
+            "statscroll",
+            "scroll",
+            "food",
+            "heal",
+            "stopwatch",
+            "cooldown",
+            "levelbook",
+            "level up",
+            "ap orb",
+            "augment",
+            "permanent",
+            "instant",
+            "tier",
+            "minor",
+            "standard",
+            "greater",
+            "snack",
+            "meal",
+            "feast",
+            "drop",
+            "loot",
+            "drop table",
+            "enemy drop",
+            "boss drop",
+            "elite drop",
         ],
         "files": [
             "ECS/Components/Combat/CollectibleComponent.cs",
@@ -369,11 +674,37 @@ SUBSYSTEMS = {
         "name": "Core & Fusion System",
         "description": "Equipment system: Orbs + Mods fused into Cores. PowerLevel (1-5) on all items via augment tokens. SlotBasedEquipment (3+3 slots).",
         "keywords": [
-            "core", "orb", "mod", "fusion", "forge", "equipment", "equip", "slot",
-            "rarity", "item", "stat", "ability", "element", "fire", "ice",
-            "lightning", "earth", "void", "light", "dark", "nature", "splitshot",
-            "explosive", "homing", "piercing", "critical", "lifesteal",
-            "powerlevel", "augment", "token", "upgrade"
+            "core",
+            "orb",
+            "mod",
+            "fusion",
+            "forge",
+            "equipment",
+            "equip",
+            "slot",
+            "rarity",
+            "item",
+            "stat",
+            "ability",
+            "element",
+            "fire",
+            "ice",
+            "lightning",
+            "earth",
+            "void",
+            "light",
+            "dark",
+            "nature",
+            "splitshot",
+            "explosive",
+            "homing",
+            "piercing",
+            "critical",
+            "lifesteal",
+            "powerlevel",
+            "augment",
+            "token",
+            "upgrade",
         ],
         "files": [
             "Core/CoreComponent.cs",
@@ -399,11 +730,36 @@ SUBSYSTEMS = {
         "name": "UI Framework",
         "description": "Unified UI drawing primitives, color palette, scaling, HUD widgets, overlays, and NinePatch panels",
         "keywords": [
-            "ui", "hud", "draw", "panel", "button", "overlay", "menu", "widget",
-            "color", "scale", "scaledui", "uicolors", "uidrawhelpers", "uistyles",
-            "ninepatch", "9-slice", "spritebatch", "font", "text", "progress bar",
-            "buff bar", "player widget", "radial dial", "tooltip", "pause",
-            "victory", "gameover", "shop", "lobby", "skiashapefactory"
+            "ui",
+            "hud",
+            "draw",
+            "panel",
+            "button",
+            "overlay",
+            "menu",
+            "widget",
+            "color",
+            "scale",
+            "scaledui",
+            "uicolors",
+            "uidrawhelpers",
+            "uistyles",
+            "ninepatch",
+            "9-slice",
+            "spritebatch",
+            "font",
+            "text",
+            "progress bar",
+            "buff bar",
+            "player widget",
+            "radial dial",
+            "tooltip",
+            "pause",
+            "victory",
+            "gameover",
+            "shop",
+            "lobby",
+            "skiashapefactory",
         ],
         "files": [
             "UI/UIColors.cs",
@@ -428,10 +784,33 @@ SUBSYSTEMS = {
         "name": "Vacuum Pickup System",
         "description": "XP crystals and gold bags with Vampire Survivors-style vacuum physics (burst → float → attract → collect)",
         "keywords": [
-            "vacuum", "pickup", "xp", "crystal", "gold", "bag", "coin", "pouch",
-            "burst", "float", "attract", "collect", "drop", "loot", "enemy death",
-            "despawn", "collector bonus", "multiplayer xp", "split", "tier",
-            "yellow", "blue", "purple", "red", "small", "medium", "large"
+            "vacuum",
+            "pickup",
+            "xp",
+            "crystal",
+            "gold",
+            "bag",
+            "coin",
+            "pouch",
+            "burst",
+            "float",
+            "attract",
+            "collect",
+            "drop",
+            "loot",
+            "enemy death",
+            "despawn",
+            "collector bonus",
+            "multiplayer xp",
+            "split",
+            "tier",
+            "yellow",
+            "blue",
+            "purple",
+            "red",
+            "small",
+            "medium",
+            "large",
         ],
         "files": [
             "ECS/Components/Combat/VacuumPickupComponent.cs",
@@ -455,6 +834,7 @@ SUBSYSTEMS = {
 # =============================================================================
 # MCP Resources
 # =============================================================================
+
 
 @mcp.resource("context-retrieval://architecture")
 def get_full_architecture() -> str:
@@ -1151,67 +1531,195 @@ AGENTS = {
     "code-simplifier": {
         "name": "Code Simplifier",
         "description": "Code simplification expert for C#/MonoGame/ECS. Use when code feels complex, hard to read, or fragile. Also handles game state file refactoring (large state files >500 lines, state machine flow, UI extraction). Simplifies without breaking functionality.",
-        "triggers": ["simplify", "simplification", "complex", "complicated", "refactor", "cleanup", "clean up", "readable", "readability", "maintainable", "nested", "long method", "hard to read", "confusing", "messy", "playmenustate", "hubstate", "large file", "overlay"],
+        "triggers": [
+            "simplify",
+            "simplification",
+            "complex",
+            "complicated",
+            "refactor",
+            "cleanup",
+            "clean up",
+            "readable",
+            "readability",
+            "maintainable",
+            "nested",
+            "long method",
+            "hard to read",
+            "confusing",
+            "messy",
+            "playmenustate",
+            "hubstate",
+            "large file",
+            "overlay",
+        ],
         "model": "opus",
     },
     "coordinate-wizard": {
         "name": "Coordinate Wizard",
         "description": "Isometric coordinate and camera transform specialist. Use for world-to-screen conversion, isometric projections, mouse picking, entity positioning, tile rendering, camera following, UI anchoring, or ViewMode-specific behavior.",
-        "triggers": ["coordinate", "screen", "camera", "isometric", "transform", "viewmode", "lightmap", "half-res", "projection", "mouse", "picking", "origin", "matrix"],
+        "triggers": [
+            "coordinate",
+            "screen",
+            "camera",
+            "isometric",
+            "transform",
+            "viewmode",
+            "lightmap",
+            "half-res",
+            "projection",
+            "mouse",
+            "picking",
+            "origin",
+            "matrix",
+        ],
         "model": "opus",
     },
     "ecs-component-designer": {
         "name": "ECS Component Designer",
         "description": "Arch ECS specialist for designing new components, systems, and entity archetypes following existing project patterns.",
-        "triggers": ["component", "system", "entity", "archetype", "query", "ecs", "factory"],
+        "triggers": [
+            "component",
+            "system",
+            "entity",
+            "archetype",
+            "query",
+            "ecs",
+            "factory",
+        ],
         "model": "sonnet",
     },
     "sprite-2d-artist": {
         "name": "2D Sprite Artist",
         "description": "2D sprite and animation specialist for spritesheet creation, atlas packing, animation setup, sprite integration into MonoGame content, LDtk level decoration, and placeholder asset generation.",
-        "triggers": ["sprite", "atlas", "animation", "spritesheet", "frame", "ldtk", "tileset", "texture", "pack", "placeholder"],
+        "triggers": [
+            "sprite",
+            "atlas",
+            "animation",
+            "spritesheet",
+            "frame",
+            "ldtk",
+            "tileset",
+            "texture",
+            "pack",
+            "placeholder",
+        ],
         "model": "sonnet",
     },
     "model-3d-artist": {
         "name": "3D Model Artist",
         "description": "3D model and Meshy pipeline specialist for image-to-3D generation, retexturing, rigging, animation, and Blender sprite rendering.",
-        "triggers": ["meshy", "blender", "3d", "model", "rigging", "retexture", "headless", "glb", "fbx", "mixamo"],
+        "triggers": [
+            "meshy",
+            "blender",
+            "3d",
+            "model",
+            "rigging",
+            "retexture",
+            "headless",
+            "glb",
+            "fbx",
+            "mixamo",
+        ],
         "model": "sonnet",
     },
     "debugger": {
         "name": "Performance/Network Debugger",
         "description": "Performance and network debugging specialist for system profiling, performance bottlenecks, multiplayer sync issues, latency investigation, clock synchronization, damage authority debugging, and lobby/connection debugging.",
-        "triggers": ["performance", "slow", "bottleneck", "latency", "sync", "network", "profiler", "fps", "debug", "lag", "damage authority", "desync"],
+        "triggers": [
+            "performance",
+            "slow",
+            "bottleneck",
+            "latency",
+            "sync",
+            "network",
+            "profiler",
+            "fps",
+            "debug",
+            "lag",
+            "damage authority",
+            "desync",
+        ],
         "model": "opus",
     },
     "dungeon-tester": {
         "name": "Dungeon Tester",
         "description": "Dungeon generation testing specialist for seed testing, room connectivity analysis, BSP debugging, procedural content validation, and spawner/treasure distribution checks.",
-        "triggers": ["dungeon", "seed", "bsp", "room", "corridor", "procedural", "generation", "spawn"],
+        "triggers": [
+            "dungeon",
+            "seed",
+            "bsp",
+            "room",
+            "corridor",
+            "procedural",
+            "generation",
+            "spawn",
+        ],
         "model": "sonnet",
     },
     "code-reviewer-game-dev": {
         "name": "Game Dev Code Reviewer",
         "description": "Expert game engine code reviewer for C# ECS systems, physics logic, or networking code. Reviews for performance, correctness, and MonoGame best practices.",
-        "triggers": ["review", "refactor", "allocations", "hot path", "performance", "patterns"],
+        "triggers": [
+            "review",
+            "refactor",
+            "allocations",
+            "hot path",
+            "performance",
+            "patterns",
+        ],
         "model": "opus",
     },
     "network-protocol-designer": {
         "name": "Network Protocol Designer",
         "description": "Network message and protocol specialist for adding new message types, sync patterns, determinism, damage authority, multiplayer state synchronization, and MessagePack serialization.",
-        "triggers": ["message", "protocol", "sync", "determinism", "spawn seed", "snapshot", "interpolation", "reconciliation", "damage report", "health sync", "death batch", "authority", "messagepack", "serialization", "serialize", "deserialize"],
+        "triggers": [
+            "message",
+            "protocol",
+            "sync",
+            "determinism",
+            "spawn seed",
+            "snapshot",
+            "interpolation",
+            "reconciliation",
+            "damage report",
+            "health sync",
+            "death batch",
+            "authority",
+            "messagepack",
+            "serialization",
+            "serialize",
+            "deserialize",
+        ],
         "model": "opus",
     },
     "ability-designer": {
         "name": "Ability Designer",
         "description": "End-to-end ability implementation specialist covering ECS components, systems, VFX placeholders, cooldowns, and balance considerations.",
-        "triggers": ["ability", "skill", "cooldown", "projectile", "aoe", "buff", "debuff", "cast", "power-up"],
+        "triggers": [
+            "ability",
+            "skill",
+            "cooldown",
+            "projectile",
+            "aoe",
+            "buff",
+            "debuff",
+            "cast",
+            "power-up",
+        ],
         "model": "opus",
     },
     "shader-wizard": {
         "name": "Shader Wizard",
         "description": "HLSL shader specialist for MonoGame effects, mgfxc compilation, multi-texture patterns, and graphics debugging.",
-        "triggers": ["shader", "hlsl", "mgfxc", "bloom", "lighting", "multi-texture", "sampler"],
+        "triggers": [
+            "shader",
+            "hlsl",
+            "mgfxc",
+            "bloom",
+            "lighting",
+            "multi-texture",
+            "sampler",
+        ],
         "model": "sonnet",
     },
     "ldtk-validator": {
@@ -1223,31 +1731,149 @@ AGENTS = {
     "audio-designer": {
         "name": "Audio Designer",
         "description": "Audio implementation specialist for MonoGame. Use for sound effect creation, WAV generation, audio API integration (Freesound, ElevenLabs), ECS audio timing, performance optimization, and SoundNames organization.",
-        "triggers": ["audio", "sound", "wav", "sfx", "music", "freesound", "elevenlabs", "soundeffect", "playsound", "volume", "bleep", "bloop", "click", "hover"],
+        "triggers": [
+            "audio",
+            "sound",
+            "wav",
+            "sfx",
+            "music",
+            "freesound",
+            "elevenlabs",
+            "soundeffect",
+            "playsound",
+            "volume",
+            "bleep",
+            "bloop",
+            "click",
+            "hover",
+        ],
         "model": "sonnet",
     },
     "ui-and-ux-agent": {
         "name": "UI/UX Designer",
         "description": "UI/UX design expert for MonoGame. Use when building menus, buttons, lists, dialogs, overlays, or debugging layout, scaling, and user interaction patterns.",
-        "triggers": ["ui", "ux", "menu", "button", "dialog", "overlay", "layout", "scaling", "interaction", "widget", "panel", "screen", "interface"],
+        "triggers": [
+            "ui",
+            "ux",
+            "menu",
+            "button",
+            "dialog",
+            "overlay",
+            "layout",
+            "scaling",
+            "interaction",
+            "widget",
+            "panel",
+            "screen",
+            "interface",
+        ],
         "model": "sonnet",
     },
     "level-designer": {
         "name": "Level Designer",
         "description": "Level design specialist for dungeon config, spawning, tiles, and level balancing.",
-        "triggers": ["level", "dungeon config", "spawning", "waves", "tiles", "difficulty", "balance", "enemy placement", "progression"],
+        "triggers": [
+            "level",
+            "dungeon config",
+            "spawning",
+            "waves",
+            "tiles",
+            "difficulty",
+            "balance",
+            "enemy placement",
+            "progression",
+        ],
         "model": "sonnet",
     },
     "game-design-brainstorm": {
         "name": "Game Design Brainstorm",
         "description": "Senior game designer and player experience critic. Use for brainstorming systems/mechanics, feature scoping, evaluating game feel, reviewing player experience, and critiquing designs from a player perspective.",
-        "triggers": ["design", "brainstorm", "feature", "mechanic", "system design", "scope", "tradeoff", "complexity", "game design", "fun", "feel", "game feel", "feedback", "juice", "juicy", "satisfying", "boring", "pacing", "loop", "engagement", "player experience", "critique", "evaluate"],
+        "triggers": [
+            "design",
+            "brainstorm",
+            "feature",
+            "mechanic",
+            "system design",
+            "scope",
+            "tradeoff",
+            "complexity",
+            "game design",
+            "fun",
+            "feel",
+            "game feel",
+            "feedback",
+            "juice",
+            "juicy",
+            "satisfying",
+            "boring",
+            "pacing",
+            "loop",
+            "engagement",
+            "player experience",
+            "critique",
+            "evaluate",
+        ],
         "model": "opus",
     },
     "systems-designer": {
         "name": "Systems Designer",
         "description": "MonoGame systems architecture expert. Use when designing core game systems, establishing patterns, or evaluating architectural decisions. Expert in multiplayer ARPG, FPS, and competitive game frameworks.",
-        "triggers": ["systems", "architecture", "pattern", "pooling", "spatial", "physics", "ai navigation", "a*", "pathfinding", "collision", "swept", "netcode", "tick rate", "fixed timestep", "hot path", "determinism", "seeding", "rng", "procedural", "wave", "spawning", "director", "loot", "drop table", "camera system", "input buffer", "animation state", "buff system", "debuff", "targeting", "lock-on", "save system", "persistence", "accessibility", "analytics", "replay", "anti-cheat", "loading", "streaming", "data-driven", "configuration", "definition", "json data", "hot reload", "state machine", "game state", "screen stack", "lifecycle", "event bus", "pub/sub", "messaging", "debug console", "cheat", "cvar"],
+        "triggers": [
+            "systems",
+            "architecture",
+            "pattern",
+            "pooling",
+            "spatial",
+            "physics",
+            "ai navigation",
+            "a*",
+            "pathfinding",
+            "collision",
+            "swept",
+            "netcode",
+            "tick rate",
+            "fixed timestep",
+            "hot path",
+            "determinism",
+            "seeding",
+            "rng",
+            "procedural",
+            "wave",
+            "spawning",
+            "director",
+            "loot",
+            "drop table",
+            "camera system",
+            "input buffer",
+            "animation state",
+            "buff system",
+            "debuff",
+            "targeting",
+            "lock-on",
+            "save system",
+            "persistence",
+            "accessibility",
+            "analytics",
+            "replay",
+            "anti-cheat",
+            "loading",
+            "streaming",
+            "data-driven",
+            "configuration",
+            "definition",
+            "json data",
+            "hot reload",
+            "state machine",
+            "game state",
+            "screen stack",
+            "lifecycle",
+            "event bus",
+            "pub/sub",
+            "messaging",
+            "debug console",
+            "cheat",
+            "cvar",
+        ],
         "model": "opus",
     },
 }
@@ -1256,6 +1882,7 @@ AGENTS = {
 # =============================================================================
 # MCP Tools
 # =============================================================================
+
 
 @mcp.tool()
 def suggest_agent(task_description: str) -> dict:
@@ -1272,7 +1899,7 @@ def suggest_agent(task_description: str) -> dict:
         Dictionary with recommended agent(s), matched triggers, and confidence
     """
     task_lower = task_description.lower()
-    task_words = set(re.findall(r'\b\w+\b', task_lower))
+    task_words = set(re.findall(r"\b\w+\b", task_lower))
     matches = []
 
     # Precompute trigger uniqueness: triggers in fewer agents are more informative
@@ -1304,25 +1931,33 @@ def suggest_agent(task_description: str) -> dict:
                 matched_triggers.append(trigger)
 
         # Also check description (weak signal)
-        if any(word in info["description"].lower() for word in task_words if len(word) > 3):
+        if any(
+            word in info["description"].lower() for word in task_words if len(word) > 3
+        ):
             score += 0.5
 
         if score > 0:
-            matches.append({
-                "agent": agent_id,
-                "name": info["name"],
-                "description": info["description"],
-                "model": info["model"],
-                "score": score,
-                "matched_triggers": matched_triggers,
-            })
+            matches.append(
+                {
+                    "agent": agent_id,
+                    "name": info["name"],
+                    "description": info["description"],
+                    "model": info["model"],
+                    "score": score,
+                    "matched_triggers": matched_triggers,
+                }
+            )
 
     # Sort by score descending
     matches.sort(key=lambda x: x["score"], reverse=True)
 
     # Determine confidence level
     top_score = matches[0]["score"] if matches else 0
-    confidence = "high" if top_score >= 4 else "medium" if top_score >= 2 else "low" if top_score >= 1 else "none"
+    confidence = (
+        "high"
+        if top_score >= 4
+        else "medium" if top_score >= 2 else "low" if top_score >= 1 else "none"
+    )
 
     result = {
         "task": task_description,
@@ -1335,7 +1970,9 @@ def suggest_agent(task_description: str) -> dict:
     # Add disambiguation hint when top agents are tied
     if len(matches) >= 2 and matches[0]["score"] == matches[1]["score"]:
         tied = [m["agent"] for m in matches if m["score"] == matches[0]["score"]]
-        result["disambiguation"] = f"Tied between {', '.join(tied)}. Check which files you're modifying to decide."
+        result["disambiguation"] = (
+            f"Tied between {', '.join(tied)}. Check which files you're modifying to decide."
+        )
 
     return result
 
@@ -1434,13 +2071,15 @@ def find_relevant_context(task_description: str) -> dict:
             score += 2
 
         if score > 0:
-            matches.append({
-                "subsystem": key,
-                "name": info["name"],
-                "score": score,
-                "matched_keywords": matched_keywords,
-                "files": info["files"],
-            })
+            matches.append(
+                {
+                    "subsystem": key,
+                    "name": info["name"],
+                    "score": score,
+                    "matched_keywords": matched_keywords,
+                    "files": info["files"],
+                }
+            )
 
     # Sort by score descending
     matches.sort(key=lambda x: x["score"], reverse=True)
@@ -1482,7 +2121,9 @@ def get_context_files() -> dict:
             description = "Core architecture overview (ECS, services, networking, devtools, tiled templates)"
             resource_uri = "context-retrieval://architecture"
         elif f.stem == "dungeon-generation":
-            description = "Procedural dungeon generation system (BSP, graph, rooms, corridors)"
+            description = (
+                "Procedural dungeon generation system (BSP, graph, rooms, corridors)"
+            )
             resource_uri = "context-retrieval://architecture/dungeon-generation"
         elif f.stem == "tiledlib-api":
             description = "TiledLib.Net 4.0 API reference for loading .tmx/.tsx files"
@@ -1502,18 +2143,22 @@ def get_context_files() -> dict:
         elif f.stem == "network-operations":
             description = "Network testing, debugging, and known issues"
         elif f.stem == "art-pipeline":
-            description = "3D-to-2D art pipeline (Meshy, Blender, atlas packing, content loading)"
+            description = (
+                "3D-to-2D art pipeline (Meshy, Blender, atlas packing, content loading)"
+            )
         elif f.stem == "item-system":
             description = "Equipment system: Orbs, Mods, Cores, fusion, augment tokens, PowerLevel"
 
         # Note: dungeon-debug has no .md file but has MCP resource context-retrieval://architecture/dungeon-debug
 
-        files.append({
-            "name": f.stem,
-            "path": str(f.relative_to(PROJECT_ROOT)),
-            "description": description,
-            "resource_uri": resource_uri,
-        })
+        files.append(
+            {
+                "name": f.stem,
+                "path": str(f.relative_to(PROJECT_ROOT)),
+                "description": description,
+                "resource_uri": resource_uri,
+            }
+        )
 
     return {
         "context_directory": str(CONTEXT_DIR.relative_to(PROJECT_ROOT)),
@@ -1551,38 +2196,49 @@ def search_context_documents(query: str) -> dict:
                     start = max(0, i - 2)
                     end = min(len(lines), i + 3)
                     context_lines = lines[start:end]
-                    matches.append({
-                        "line_number": i + 1,
-                        "context": "\n".join(context_lines),
-                    })
+                    matches.append(
+                        {
+                            "line_number": i + 1,
+                            "context": "\n".join(context_lines),
+                        }
+                    )
 
             if matches:
-                results.append({
-                    "document": doc_file.stem,
-                    "path": str(doc_file.relative_to(PROJECT_ROOT)),
-                    "matches": matches[:10],  # Limit to 10 matches per doc
-                    "total_matches": len(matches),
-                })
-        except Exception as e:  # noqa: BLE001
+                results.append(
+                    {
+                        "document": doc_file.stem,
+                        "path": str(doc_file.relative_to(PROJECT_ROOT)),
+                        "matches": matches[:10],  # Limit to 10 matches per doc
+                        "total_matches": len(matches),
+                    }
+                )
+        except Exception:  # noqa: BLE001
             continue
 
     # Also search SUBSYSTEMS keywords
     subsystem_matches = []
     for key, info in SUBSYSTEMS.items():
-        if query_lower in info["name"].lower() or query_lower in info["description"].lower():
-            subsystem_matches.append({
-                "subsystem": key,
-                "name": info["name"],
-                "description": info["description"],
-            })
+        if (
+            query_lower in info["name"].lower()
+            or query_lower in info["description"].lower()
+        ):
+            subsystem_matches.append(
+                {
+                    "subsystem": key,
+                    "name": info["name"],
+                    "description": info["description"],
+                }
+            )
         else:
             for keyword in info["keywords"]:
                 if query_lower in keyword.lower():
-                    subsystem_matches.append({
-                        "subsystem": key,
-                        "name": info["name"],
-                        "matched_keyword": keyword,
-                    })
+                    subsystem_matches.append(
+                        {
+                            "subsystem": key,
+                            "name": info["name"],
+                            "matched_keyword": keyword,
+                        }
+                    )
                     break
 
     return {
@@ -1595,6 +2251,7 @@ def search_context_documents(query: str) -> dict:
 # =============================================================================
 # Entry Point
 # =============================================================================
+
 
 def main():
     """Run the MCP server."""

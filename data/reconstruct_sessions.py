@@ -21,83 +21,306 @@ import argparse
 import csv
 import hashlib
 import json
-import os
 import re
 import subprocess
 import sys
 from collections import defaultdict
-from datetime import datetime, timezone, timedelta
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
-from typing import Dict, List, Optional, Set, Tuple
 
 # ---------------------------------------------------------------------------
 # Constants
 # ---------------------------------------------------------------------------
 
 REPO_ROOT = Path(r"c:\Users\big-a\Coding Projects\game-project")
-GAP_START = datetime(2025, 12, 15, tzinfo=timezone.utc)
-GAP_END = datetime(2026, 1, 16, tzinfo=timezone.utc)  # exclusive upper bound
+GAP_START = datetime(2025, 12, 15, tzinfo=UTC)
+GAP_END = datetime(2026, 1, 16, tzinfo=UTC)  # exclusive upper bound
 GAP_START_EPOCH_S = int(GAP_START.timestamp())
 GAP_END_EPOCH_S = int(GAP_END.timestamp())
 GAP_START_EPOCH_MS = GAP_START_EPOCH_S * 1000
 GAP_END_EPOCH_MS = GAP_END_EPOCH_S * 1000
 
 CSV_COLUMNS = [
-    'id', 'timestamp', 'date', 'time', 'prompt', 'prompt_full', 'word_count', 'char_count',
-    'category', 'category_secondary', 'session_id', 'conversation_file', 'git_branch',
-    'model', 'response_tokens_in', 'response_tokens_out', 'response_cache_read',
-    'response_cache_create', 'tools_used', 'tool_count', 'agents_spawned', 'agent_types',
-    'platform', 'prompt_hash',
-    'cost_input_usd', 'cost_output_usd', 'cost_cache_read_usd', 'cost_cache_write_usd', 'cost_total_usd'
+    "id",
+    "timestamp",
+    "date",
+    "time",
+    "prompt",
+    "prompt_full",
+    "word_count",
+    "char_count",
+    "category",
+    "category_secondary",
+    "session_id",
+    "conversation_file",
+    "git_branch",
+    "model",
+    "response_tokens_in",
+    "response_tokens_out",
+    "response_cache_read",
+    "response_cache_create",
+    "tools_used",
+    "tool_count",
+    "agents_spawned",
+    "agent_types",
+    "platform",
+    "prompt_hash",
+    "cost_input_usd",
+    "cost_output_usd",
+    "cost_cache_read_usd",
+    "cost_cache_write_usd",
+    "cost_total_usd",
 ]
 
 # Category definitions (copied from extract_prompts.py for self-containment)
 CATEGORIES = {
-    'physics': ['physics', 'collision', 'velocity', 'knockback', 'spatial', 'raycast', 'force', 'movement'],
-    'networking': ['network', 'multiplayer', 'sync', 'lobby', 'host', 'client', 'interpolation', 'latency', 'packet', 'message', 'peer'],
-    'rendering': ['render', 'sprite', 'animation', 'camera', 'texture', 'particle', 'visual', 'draw', 'effect', 'bloom', 'shader'],
-    'ui': ['menu', 'button', 'ui', 'hud', 'interface', 'overlay', 'screen', 'panel', 'dialog', 'modal', 'tooltip'],
-    'combat': ['damage', 'health', 'projectile', 'ability', 'attack', 'weapon', 'powerup', 'fireball', 'bullet'],
-    'ai': ['ai', 'behavior', 'enemy', 'chase', 'wander', 'pathfind', 'aggro', 'target', 'flee'],
-    'spawning': ['spawn', 'wave', 'spawner'],
-    'dungeon': ['dungeon', 'procedural', 'bsp', 'room', 'corridor', 'generation', 'level', 'floor'],
-    'input': ['input', 'keyboard', 'controller', 'gamepad', 'controls', 'keybind', 'mouse'],
-    'ecs': ['entity', 'component', 'system', 'archetype', 'query', 'world'],
-    'artwork': ['sprite', 'texture', 'asset', 'image', 'art', 'placeholder', 'atlas', 'png', 'blender', 'meshy'],
-    'devtools': ['debug', 'preview', 'test', 'devtools', 'console', 'cli'],
-    'audio': ['sound', 'audio', 'music', 'sfx', 'volume'],
-    'content': ['content', 'definition', 'json', 'data', 'load', 'config'],
-    'save': ['save', 'load', 'profile', 'slot', 'progress'],
-    'hero': ['hero', 'player', 'character', 'class', 'drone'],
-    'gamestate': ['state', 'transition', 'hub', 'survival', 'adventure', 'defense', 'payload', 'boss'],
-    'build': ['dotnet', 'build', 'compile', 'launch', 'run', 'terminal', 'install', 'homebrew', 'npm', 'nuget'],
-    'tooling': ['agent', 'mcp', 'context-retrieval', 'claude', 'skill', 'hook'],
-    'leveldesign': ['ldtk', 'tiled', 'tilemap', 'tileset', 'map editor', 'room template'],
-    'refactor': ['refactor', 'cleanup', 'organize', 'rename', 'restructure'],
-    'planning': ['plan', 'phase', 'implement', 'approach', 'what is next', 'begin with', 'what is task', 'what is step',
-                 'vertical slice', 'conclude', 'scope', 'roadmap', 'milestone', 'prioritize', 'backlog'],
-    'debugging': ['fix', 'bug', 'wrong', 'broken', "doesn't work", 'not working', 'still not', 'why does',
-                  'why is', 'issue', 'off by', 'offset', 'misalign', 'crash', 'exception', 'error', 'null ref'],
-    'game_design': ['kirby', 'vamp survivor', 'noita', 'wizard with a gun', 'hades', 'diablo', 'design',
-                    'mechanic', 'how many combo', 'how many abilit', 'compare to', 'what do you think',
-                    'balance', 'feel', 'pacing', 'fun'],
-    'documentation': ['document', 'context file', 'write up', 'write about', 'add notes', 'changelog',
-                      'devlog', 'readme', 'whitepaper', 'update.*context'],
+    "physics": [
+        "physics",
+        "collision",
+        "velocity",
+        "knockback",
+        "spatial",
+        "raycast",
+        "force",
+        "movement",
+    ],
+    "networking": [
+        "network",
+        "multiplayer",
+        "sync",
+        "lobby",
+        "host",
+        "client",
+        "interpolation",
+        "latency",
+        "packet",
+        "message",
+        "peer",
+    ],
+    "rendering": [
+        "render",
+        "sprite",
+        "animation",
+        "camera",
+        "texture",
+        "particle",
+        "visual",
+        "draw",
+        "effect",
+        "bloom",
+        "shader",
+    ],
+    "ui": [
+        "menu",
+        "button",
+        "ui",
+        "hud",
+        "interface",
+        "overlay",
+        "screen",
+        "panel",
+        "dialog",
+        "modal",
+        "tooltip",
+    ],
+    "combat": [
+        "damage",
+        "health",
+        "projectile",
+        "ability",
+        "attack",
+        "weapon",
+        "powerup",
+        "fireball",
+        "bullet",
+    ],
+    "ai": [
+        "ai",
+        "behavior",
+        "enemy",
+        "chase",
+        "wander",
+        "pathfind",
+        "aggro",
+        "target",
+        "flee",
+    ],
+    "spawning": ["spawn", "wave", "spawner"],
+    "dungeon": [
+        "dungeon",
+        "procedural",
+        "bsp",
+        "room",
+        "corridor",
+        "generation",
+        "level",
+        "floor",
+    ],
+    "input": [
+        "input",
+        "keyboard",
+        "controller",
+        "gamepad",
+        "controls",
+        "keybind",
+        "mouse",
+    ],
+    "ecs": ["entity", "component", "system", "archetype", "query", "world"],
+    "artwork": [
+        "sprite",
+        "texture",
+        "asset",
+        "image",
+        "art",
+        "placeholder",
+        "atlas",
+        "png",
+        "blender",
+        "meshy",
+    ],
+    "devtools": ["debug", "preview", "test", "devtools", "console", "cli"],
+    "audio": ["sound", "audio", "music", "sfx", "volume"],
+    "content": ["content", "definition", "json", "data", "load", "config"],
+    "save": ["save", "load", "profile", "slot", "progress"],
+    "hero": ["hero", "player", "character", "class", "drone"],
+    "gamestate": [
+        "state",
+        "transition",
+        "hub",
+        "survival",
+        "adventure",
+        "defense",
+        "payload",
+        "boss",
+    ],
+    "build": [
+        "dotnet",
+        "build",
+        "compile",
+        "launch",
+        "run",
+        "terminal",
+        "install",
+        "homebrew",
+        "npm",
+        "nuget",
+    ],
+    "tooling": ["agent", "mcp", "context-retrieval", "claude", "skill", "hook"],
+    "leveldesign": [
+        "ldtk",
+        "tiled",
+        "tilemap",
+        "tileset",
+        "map editor",
+        "room template",
+    ],
+    "refactor": ["refactor", "cleanup", "organize", "rename", "restructure"],
+    "planning": [
+        "plan",
+        "phase",
+        "implement",
+        "approach",
+        "what is next",
+        "begin with",
+        "what is task",
+        "what is step",
+        "vertical slice",
+        "conclude",
+        "scope",
+        "roadmap",
+        "milestone",
+        "prioritize",
+        "backlog",
+    ],
+    "debugging": [
+        "fix",
+        "bug",
+        "wrong",
+        "broken",
+        "doesn't work",
+        "not working",
+        "still not",
+        "why does",
+        "why is",
+        "issue",
+        "off by",
+        "offset",
+        "misalign",
+        "crash",
+        "exception",
+        "error",
+        "null ref",
+    ],
+    "game_design": [
+        "kirby",
+        "vamp survivor",
+        "noita",
+        "wizard with a gun",
+        "hades",
+        "diablo",
+        "design",
+        "mechanic",
+        "how many combo",
+        "how many abilit",
+        "compare to",
+        "what do you think",
+        "balance",
+        "feel",
+        "pacing",
+        "fun",
+    ],
+    "documentation": [
+        "document",
+        "context file",
+        "write up",
+        "write about",
+        "add notes",
+        "changelog",
+        "devlog",
+        "readme",
+        "whitepaper",
+        "update.*context",
+    ],
 }
 
 SYSTEM_PATTERNS = [
-    'request interrupted',
-    '<local-command-',
-    'compacted',
-    'goodbye',
-    'catch you later',
-    'warmup',
+    "request interrupted",
+    "<local-command-",
+    "compacted",
+    "goodbye",
+    "catch you later",
+    "warmup",
 ]
 
 CONFIRMATION_WORDS = {
-    'yes', 'no', 'yea', 'yeah', 'nope', 'sure', 'ok', 'okay', 'continue', 'proceed', 'both', 'neither',
-    'yep', 'yup', 'looks good', 'go ahead', 'do it', 'sounds good', 'correct', 'right', 'exactly',
-    'retry', 'redo', 'rewrite', 're-write', 'repeat', 'b', 'a',
+    "yes",
+    "no",
+    "yea",
+    "yeah",
+    "nope",
+    "sure",
+    "ok",
+    "okay",
+    "continue",
+    "proceed",
+    "both",
+    "neither",
+    "yep",
+    "yup",
+    "looks good",
+    "go ahead",
+    "do it",
+    "sounds good",
+    "correct",
+    "right",
+    "exactly",
+    "retry",
+    "redo",
+    "rewrite",
+    "re-write",
+    "repeat",
+    "b",
+    "a",
 }
 
 
@@ -105,50 +328,52 @@ CONFIRMATION_WORDS = {
 # Shared utilities (mirroring extract_prompts.py)
 # ---------------------------------------------------------------------------
 
+
 def compute_hash(timestamp: str, prompt: str) -> str:
     """Compute SHA256 hash for deduplication."""
     content = f"{timestamp}:{prompt}"
-    return hashlib.sha256(content.encode('utf-8')).hexdigest()[:16]
+    return hashlib.sha256(content.encode("utf-8")).hexdigest()[:16]
 
 
-def classify_prompt(text: str) -> Tuple[str, str]:
+def classify_prompt(text: str) -> tuple[str, str]:
     """Classify prompt into primary and secondary categories."""
     text_lower = text.lower()
     text_stripped = text.strip().lower()
 
     for pattern in SYSTEM_PATTERNS:
         if pattern in text_lower:
-            return 'system', ''
+            return "system", ""
 
-    if text_stripped in CONFIRMATION_WORDS or (len(text_stripped) <= 30 and any(
-        text_stripped.startswith(w) for w in CONFIRMATION_WORDS
-    )):
-        return 'confirmation', ''
+    if text_stripped in CONFIRMATION_WORDS or (
+        len(text_stripped) <= 30
+        and any(text_stripped.startswith(w) for w in CONFIRMATION_WORDS)
+    ):
+        return "confirmation", ""
 
-    scores: Dict[str, int] = {}
+    scores: dict[str, int] = {}
     for category, keywords in CATEGORIES.items():
         score = sum(1 for kw in keywords if kw in text_lower)
         if score > 0:
             scores[category] = score
 
     if not scores:
-        return 'other', ''
+        return "other", ""
 
     sorted_cats = sorted(scores.items(), key=lambda x: x[1], reverse=True)
     primary = sorted_cats[0][0]
-    secondary = sorted_cats[1][0] if len(sorted_cats) > 1 else ''
+    secondary = sorted_cats[1][0] if len(sorted_cats) > 1 else ""
     return primary, secondary
 
 
-def load_existing_hashes(csv_path: Path) -> Set[str]:
+def load_existing_hashes(csv_path: Path) -> set[str]:
     """Load existing prompt hashes from CSV to avoid duplicates."""
     hashes = set()
     if csv_path.exists():
         try:
-            with open(csv_path, 'r', encoding='utf-8', newline='') as f:
+            with open(csv_path, "r", encoding="utf-8", newline="") as f:
                 reader = csv.DictReader(f)
                 for row in reader:
-                    h = row.get('prompt_hash', '')
+                    h = row.get("prompt_hash", "")
                     if h:
                         hashes.add(h)
         except Exception as e:  # noqa: BLE001
@@ -159,19 +384,19 @@ def load_existing_hashes(csv_path: Path) -> Set[str]:
 def make_record(
     timestamp_iso: str,
     prompt_text: str,
-    session_id: str = '',
-    git_branch: str = '',
-    tools_used: str = '',
+    session_id: str = "",
+    git_branch: str = "",
+    tools_used: str = "",
     tool_count: int = 0,
-) -> Dict:
+) -> dict:
     """Build a CSV-compatible record dict from reconstructed data."""
     try:
-        dt = datetime.fromisoformat(timestamp_iso.replace('Z', '+00:00'))
-        date_str = dt.strftime('%Y-%m-%d')
-        time_str = dt.strftime('%H:%M:%S')
+        dt = datetime.fromisoformat(timestamp_iso.replace("Z", "+00:00"))
+        date_str = dt.strftime("%Y-%m-%d")
+        time_str = dt.strftime("%H:%M:%S")
     except Exception:  # noqa: BLE001
-        date_str = ''
-        time_str = ''
+        date_str = ""
+        time_str = ""
 
     category, category_secondary = classify_prompt(prompt_text)
     word_count = len(prompt_text.split())
@@ -179,35 +404,35 @@ def make_record(
     prompt_hash = compute_hash(timestamp_iso, prompt_text)
 
     return {
-        'id': 0,  # assigned later
-        'timestamp': timestamp_iso,
-        'date': date_str,
-        'time': time_str,
-        'prompt': prompt_text[:500] if len(prompt_text) > 500 else prompt_text,
-        'prompt_full': prompt_text if len(prompt_text) > 500 else '',
-        'word_count': word_count,
-        'char_count': char_count,
-        'category': category,
-        'category_secondary': category_secondary,
-        'session_id': session_id,
-        'conversation_file': 'reconstructed',
-        'git_branch': git_branch,
-        'model': '',
-        'response_tokens_in': 0,
-        'response_tokens_out': 0,
-        'response_cache_read': 0,
-        'response_cache_create': 0,
-        'tools_used': tools_used,
-        'tool_count': tool_count,
-        'agents_spawned': 0,
-        'agent_types': '',
-        'platform': 'windows',
-        'prompt_hash': prompt_hash,
-        'cost_input_usd': 0.0,
-        'cost_output_usd': 0.0,
-        'cost_cache_read_usd': 0.0,
-        'cost_cache_write_usd': 0.0,
-        'cost_total_usd': 0.0,
+        "id": 0,  # assigned later
+        "timestamp": timestamp_iso,
+        "date": date_str,
+        "time": time_str,
+        "prompt": prompt_text[:500] if len(prompt_text) > 500 else prompt_text,
+        "prompt_full": prompt_text if len(prompt_text) > 500 else "",
+        "word_count": word_count,
+        "char_count": char_count,
+        "category": category,
+        "category_secondary": category_secondary,
+        "session_id": session_id,
+        "conversation_file": "reconstructed",
+        "git_branch": git_branch,
+        "model": "",
+        "response_tokens_in": 0,
+        "response_tokens_out": 0,
+        "response_cache_read": 0,
+        "response_cache_create": 0,
+        "tools_used": tools_used,
+        "tool_count": tool_count,
+        "agents_spawned": 0,
+        "agent_types": "",
+        "platform": "windows",
+        "prompt_hash": prompt_hash,
+        "cost_input_usd": 0.0,
+        "cost_output_usd": 0.0,
+        "cost_cache_read_usd": 0.0,
+        "cost_cache_write_usd": 0.0,
+        "cost_total_usd": 0.0,
     }
 
 
@@ -215,7 +440,8 @@ def make_record(
 # Source 1: Todo files
 # ---------------------------------------------------------------------------
 
-def parse_todo_files() -> List[Dict]:
+
+def parse_todo_files() -> list[dict]:
     """
     Parse ~/.claude/todos/*.json for sessions in the gap period.
 
@@ -230,7 +456,7 @@ def parse_todo_files() -> List[Dict]:
         print("  Warning: todos directory not found")
         return []
 
-    records: List[Dict] = []
+    records: list[dict] = []
     skipped_empty = 0
     skipped_out_of_range = 0
 
@@ -247,12 +473,12 @@ def parse_todo_files() -> List[Dict]:
 
         # Extract session ID from filename: {uuid}-agent-{uuid}.json
         fname = todo_file.stem  # e.g. "006fd896-...-agent-006fd896-..."
-        parts = fname.split('-agent-')
+        parts = fname.split("-agent-")
         session_id = parts[0] if parts else fname
 
         # Read tasks
         try:
-            with open(todo_file, 'r', encoding='utf-8') as f:
+            with open(todo_file, "r", encoding="utf-8") as f:
                 tasks = json.load(f)
         except (json.JSONDecodeError, OSError):
             continue
@@ -270,16 +496,16 @@ def parse_todo_files() -> List[Dict]:
         for task in tasks:
             if not isinstance(task, dict):
                 continue
-            content = task.get('content', '').strip()
+            content = task.get("content", "").strip()
             if not content:
                 continue
             task_descriptions.append(content)
-            status = task.get('status', '')
-            if status == 'completed':
+            status = task.get("status", "")
+            if status == "completed":
                 completed_count += 1
-            elif status == 'pending':
+            elif status == "pending":
                 pending_count += 1
-            elif status == 'in_progress':
+            elif status == "in_progress":
                 in_progress_count += 1
 
         if not task_descriptions:
@@ -301,8 +527,8 @@ def parse_todo_files() -> List[Dict]:
         )
 
         # Convert mtime to ISO timestamp
-        dt = datetime.fromtimestamp(mtime, tz=timezone.utc)
-        timestamp_iso = dt.strftime('%Y-%m-%dT%H:%M:%S.000Z')
+        dt = datetime.fromtimestamp(mtime, tz=UTC)
+        timestamp_iso = dt.strftime("%Y-%m-%dT%H:%M:%S.000Z")
 
         record = make_record(
             timestamp_iso=timestamp_iso,
@@ -311,8 +537,10 @@ def parse_todo_files() -> List[Dict]:
         )
         records.append(record)
 
-    print(f"  Todo files: {len(records)} sessions with tasks, "
-          f"{skipped_empty} empty, {skipped_out_of_range} out of date range")
+    print(
+        f"  Todo files: {len(records)} sessions with tasks, "
+        f"{skipped_empty} empty, {skipped_out_of_range} out of date range"
+    )
     return records
 
 
@@ -320,7 +548,8 @@ def parse_todo_files() -> List[Dict]:
 # Source 2: Git commits
 # ---------------------------------------------------------------------------
 
-def parse_git_commits() -> List[Dict]:
+
+def parse_git_commits() -> list[dict]:
     """
     Parse git log for commits in the gap period.
 
@@ -331,12 +560,19 @@ def parse_git_commits() -> List[Dict]:
     """
     try:
         result = subprocess.run(
-            ['git', 'log', '--all',
-             '--format=%H|%aI|%s',
-             '--numstat',
-             f'--after={GAP_START.strftime("%Y-%m-%d")}',
-             f'--before={GAP_END.strftime("%Y-%m-%d")}'],
-            capture_output=True, text=True, encoding='utf-8', check=False,
+            [
+                "git",
+                "log",
+                "--all",
+                "--format=%H|%aI|%s",
+                "--numstat",
+                f'--after={GAP_START.strftime("%Y-%m-%d")}',
+                f'--before={GAP_END.strftime("%Y-%m-%d")}',
+            ],
+            capture_output=True,
+            text=True,
+            encoding="utf-8",
+            check=False,
             cwd=str(REPO_ROOT),
             timeout=30,
         )
@@ -345,18 +581,20 @@ def parse_git_commits() -> List[Dict]:
         return []
 
     if result.returncode != 0:
-        print(f"  Warning: git log returned {result.returncode}: {result.stderr.strip()}")
+        print(
+            f"  Warning: git log returned {result.returncode}: {result.stderr.strip()}"
+        )
         return []
 
-    records: List[Dict] = []
-    lines = result.stdout.strip().split('\n')
+    records: list[dict] = []
+    lines = result.stdout.strip().split("\n")
 
-    current_hash = ''
-    current_date = ''
-    current_msg = ''
+    current_hash = ""
+    current_date = ""
+    current_msg = ""
     files_added = 0
     files_deleted = 0
-    files_changed: List[str] = []
+    files_changed: list[str] = []
 
     def flush_commit():
         nonlocal current_hash, current_date, current_msg
@@ -366,14 +604,18 @@ def parse_git_commits() -> List[Dict]:
             return
 
         # Summarize file changes
-        change_summary = f"+{files_added}/-{files_deleted}" if (files_added or files_deleted) else ""
+        change_summary = (
+            f"+{files_added}/-{files_deleted}" if (files_added or files_deleted) else ""
+        )
         changed_dirs = set()
         for fpath in files_changed:
-            parts = fpath.split('/')
+            parts = fpath.split("/")
             if len(parts) > 1:
                 changed_dirs.add(parts[0])
 
-        prompt_text = f"[Reconstructed from git commit {current_hash[:8]}] {current_msg}"
+        prompt_text = (
+            f"[Reconstructed from git commit {current_hash[:8]}] {current_msg}"
+        )
         if change_summary:
             prompt_text += f" ({change_summary} lines"
             if changed_dirs:
@@ -381,7 +623,7 @@ def parse_git_commits() -> List[Dict]:
             prompt_text += ")"
 
         # Detect branch from commit (best effort: use main)
-        git_branch = 'main'
+        git_branch = "main"
 
         record = make_record(
             timestamp_iso=current_date,
@@ -391,20 +633,22 @@ def parse_git_commits() -> List[Dict]:
         records.append(record)
 
         # Reset
-        current_hash = ''
-        current_date = ''
-        current_msg = ''
+        current_hash = ""
+        current_date = ""
+        current_msg = ""
         files_added = 0
         files_deleted = 0
         files_changed = []
 
     for line in lines:
         # Check if this is a commit header line (hash|date|message)
-        if '|' in line and len(line.split('|')) >= 3:
+        if "|" in line and len(line.split("|")) >= 3:
             # Looks like a commit header — but verify by checking hash format
-            parts = line.split('|', 2)
+            parts = line.split("|", 2)
             potential_hash = parts[0].strip()
-            if len(potential_hash) == 40 and all(c in '0123456789abcdef' for c in potential_hash):
+            if len(potential_hash) == 40 and all(
+                c in "0123456789abcdef" for c in potential_hash
+            ):
                 # Flush previous commit
                 flush_commit()
                 current_hash = potential_hash
@@ -416,7 +660,7 @@ def parse_git_commits() -> List[Dict]:
         line = line.strip()
         if not line:
             continue
-        numstat_parts = line.split('\t')
+        numstat_parts = line.split("\t")
         if len(numstat_parts) >= 3:
             added_str = numstat_parts[0]
             deleted_str = numstat_parts[1]
@@ -442,7 +686,8 @@ def parse_git_commits() -> List[Dict]:
 # Source 3: Shell snapshots (context only, no individual records)
 # ---------------------------------------------------------------------------
 
-def parse_shell_snapshots() -> Dict[str, int]:
+
+def parse_shell_snapshots() -> dict[str, int]:
     """
     Parse ~/.claude/shell-snapshots/ for snapshots in the gap period.
 
@@ -455,15 +700,15 @@ def parse_shell_snapshots() -> Dict[str, int]:
         print("  Warning: shell-snapshots directory not found")
         return {}
 
-    daily_counts: Dict[str, int] = defaultdict(int)
+    daily_counts: dict[str, int] = defaultdict(int)
     total = 0
 
     for snap_file in snapshots_dir.iterdir():
-        if not snap_file.name.startswith('snapshot-bash-'):
+        if not snap_file.name.startswith("snapshot-bash-"):
             continue
 
         # Extract epoch_ms from filename
-        match = re.match(r'snapshot-bash-(\d+)-', snap_file.name)
+        match = re.match(r"snapshot-bash-(\d+)-", snap_file.name)
         if not match:
             continue
 
@@ -471,12 +716,14 @@ def parse_shell_snapshots() -> Dict[str, int]:
         if epoch_ms < GAP_START_EPOCH_MS or epoch_ms >= GAP_END_EPOCH_MS:
             continue
 
-        dt = datetime.fromtimestamp(epoch_ms / 1000.0, tz=timezone.utc)
-        date_str = dt.strftime('%Y-%m-%d')
+        dt = datetime.fromtimestamp(epoch_ms / 1000.0, tz=UTC)
+        date_str = dt.strftime("%Y-%m-%d")
         daily_counts[date_str] += 1
         total += 1
 
-    print(f"  Shell snapshots: {total} snapshots across {len(daily_counts)} days in gap period")
+    print(
+        f"  Shell snapshots: {total} snapshots across {len(daily_counts)} days in gap period"
+    )
     return dict(daily_counts)
 
 
@@ -484,10 +731,11 @@ def parse_shell_snapshots() -> Dict[str, int]:
 # Correlation: match git commits to todo sessions by date
 # ---------------------------------------------------------------------------
 
+
 def correlate_commits_to_sessions(
-    todo_records: List[Dict],
-    git_records: List[Dict],
-) -> List[Dict]:
+    todo_records: list[dict],
+    git_records: list[dict],
+) -> list[dict]:
     """
     For each git commit, try to find a matching todo session by date proximity.
     If found, annotate the git record with the session_id.
@@ -497,27 +745,27 @@ def correlate_commits_to_sessions(
         return git_records
 
     # Build date -> session_id mapping from todos
-    session_by_date: Dict[str, str] = {}
+    session_by_date: dict[str, str] = {}
     for rec in todo_records:
-        date = rec.get('date', '')
-        sid = rec.get('session_id', '')
+        date = rec.get("date", "")
+        sid = rec.get("session_id", "")
         if date and sid:
             session_by_date[date] = sid
 
     correlated = 0
     for rec in git_records:
-        commit_date = rec.get('date', '')
+        commit_date = rec.get("date", "")
         if commit_date in session_by_date:
-            rec['session_id'] = session_by_date[commit_date]
+            rec["session_id"] = session_by_date[commit_date]
             correlated += 1
         else:
             # Try adjacent days (+/- 1)
             try:
-                dt = datetime.strptime(commit_date, '%Y-%m-%d')
+                dt = datetime.strptime(commit_date, "%Y-%m-%d")
                 for delta in [timedelta(days=-1), timedelta(days=1)]:
-                    adj_date = (dt + delta).strftime('%Y-%m-%d')
+                    adj_date = (dt + delta).strftime("%Y-%m-%d")
                     if adj_date in session_by_date:
-                        rec['session_id'] = session_by_date[adj_date]
+                        rec["session_id"] = session_by_date[adj_date]
                         correlated += 1
                         break
             except ValueError:
@@ -531,16 +779,19 @@ def correlate_commits_to_sessions(
 # Preview mode
 # ---------------------------------------------------------------------------
 
+
 def print_preview(
-    todo_records: List[Dict],
-    git_records: List[Dict],
-    snapshot_counts: Dict[str, int],
+    todo_records: list[dict],
+    git_records: list[dict],
+    snapshot_counts: dict[str, int],
 ):
     """Print a detailed preview of what would be reconstructed."""
     print("\n" + "=" * 70)
     print("RECONSTRUCTION PREVIEW")
     print("=" * 70)
-    print(f"Gap period: {GAP_START.strftime('%Y-%m-%d')} to {GAP_END.strftime('%Y-%m-%d')}")
+    print(
+        f"Gap period: {GAP_START.strftime('%Y-%m-%d')} to {GAP_END.strftime('%Y-%m-%d')}"
+    )
     print(f"Total records to create: {len(todo_records) + len(git_records)}")
     print(f"  From todo sessions:  {len(todo_records)}")
     print(f"  From git commits:    {len(git_records)}")
@@ -551,8 +802,12 @@ def print_preview(
         print("-" * 70)
         print("TODO SESSIONS (one entry per session with tasks)")
         print("-" * 70)
-        for rec in sorted(todo_records, key=lambda r: r['timestamp']):
-            prompt = rec['prompt'][:120] + "..." if len(rec['prompt']) > 120 else rec['prompt']
+        for rec in sorted(todo_records, key=lambda r: r["timestamp"]):
+            prompt = (
+                rec["prompt"][:120] + "..."
+                if len(rec["prompt"]) > 120
+                else rec["prompt"]
+            )
             print(f"  {rec['date']} {rec['time']}  [{rec['category']:12}]  {prompt}")
         print()
 
@@ -561,11 +816,17 @@ def print_preview(
         print("-" * 70)
         print("GIT COMMITS (one entry per commit)")
         print("-" * 70)
-        for rec in sorted(git_records, key=lambda r: r['timestamp']):
-            prompt = rec['prompt'][:120] + "..." if len(rec['prompt']) > 120 else rec['prompt']
-            sid = rec.get('session_id', '')
+        for rec in sorted(git_records, key=lambda r: r["timestamp"]):
+            prompt = (
+                rec["prompt"][:120] + "..."
+                if len(rec["prompt"]) > 120
+                else rec["prompt"]
+            )
+            sid = rec.get("session_id", "")
             sid_tag = f"  [session: {sid[:8]}]" if sid else ""
-            print(f"  {rec['date']} {rec['time']}  [{rec['category']:12}]{sid_tag}  {prompt}")
+            print(
+                f"  {rec['date']} {rec['time']}  [{rec['category']:12}]{sid_tag}  {prompt}"
+            )
         print()
 
     # Shell snapshot context
@@ -585,9 +846,9 @@ def print_preview(
         print("-" * 70)
         print("CATEGORY BREAKDOWN (all reconstructed records)")
         print("-" * 70)
-        cats: Dict[str, int] = defaultdict(int)
+        cats: dict[str, int] = defaultdict(int)
         for rec in all_records:
-            cats[rec['category']] += 1
+            cats[rec["category"]] += 1
         for cat, count in sorted(cats.items(), key=lambda x: x[1], reverse=True):
             pct = (count / len(all_records)) * 100
             print(f"  {cat:15}  {count:3}  ({pct:5.1f}%)")
@@ -597,17 +858,21 @@ def print_preview(
     print("-" * 70)
     print("DAILY ACTIVITY (records + shell snapshots)")
     print("-" * 70)
-    daily: Dict[str, Dict[str, int]] = defaultdict(lambda: {'records': 0, 'snapshots': 0})
+    daily: dict[str, dict[str, int]] = defaultdict(
+        lambda: {"records": 0, "snapshots": 0}
+    )
     for rec in all_records:
-        daily[rec['date']]['records'] += 1
+        daily[rec["date"]]["records"] += 1
     for date_str, count in snapshot_counts.items():
-        daily[date_str]['snapshots'] += count
+        daily[date_str]["snapshots"] += count
 
     for date_str in sorted(daily.keys()):
         d = daily[date_str]
-        r_bar = "*" * min(d['records'], 30)
-        s_bar = "." * min(d['snapshots'] // 3, 20)  # compressed
-        print(f"  {date_str}  {d['records']:2} records  {d['snapshots']:3} snapshots  {r_bar}{s_bar}")
+        r_bar = "*" * min(d["records"], 30)
+        s_bar = "." * min(d["snapshots"] // 3, 20)  # compressed
+        print(
+            f"  {date_str}  {d['records']:2} records  {d['snapshots']:3} snapshots  {r_bar}{s_bar}"
+        )
     print()
 
 
@@ -615,10 +880,11 @@ def print_preview(
 # Stats mode
 # ---------------------------------------------------------------------------
 
+
 def print_stats(
-    todo_records: List[Dict],
-    git_records: List[Dict],
-    snapshot_counts: Dict[str, int],
+    todo_records: list[dict],
+    git_records: list[dict],
+    snapshot_counts: dict[str, int],
     existing_count: int = 0,
 ):
     """Print summary statistics."""
@@ -629,12 +895,14 @@ def print_stats(
     print("RECONSTRUCTION STATISTICS")
     print("=" * 70)
 
-    print(f"\nGap period: {GAP_START.strftime('%Y-%m-%d')} to {GAP_END.strftime('%Y-%m-%d')} (32 days)")
-    print(f"\nData sources found:")
+    print(
+        f"\nGap period: {GAP_START.strftime('%Y-%m-%d')} to {GAP_END.strftime('%Y-%m-%d')} (32 days)"
+    )
+    print("\nData sources found:")
     print(f"  Todo sessions with tasks:  {len(todo_records):>4}")
     print(f"  Git commits:               {len(git_records):>4}")
     print(f"  Shell snapshots:           {total_snapshots:>4}")
-    print(f"  ----------------------------------")
+    print("  ----------------------------------")
     print(f"  Total reconstructed records: {len(all_records):>3}")
 
     if existing_count:
@@ -644,21 +912,23 @@ def print_stats(
     # Date coverage
     dates_with_activity = set()
     for rec in all_records:
-        if rec.get('date'):
-            dates_with_activity.add(rec['date'])
+        if rec.get("date"):
+            dates_with_activity.add(rec["date"])
     for d in snapshot_counts:
         dates_with_activity.add(d)
 
     print(f"\n  Days with any activity:    {len(dates_with_activity)}/32")
 
     if all_records:
-        dates = sorted(r['date'] for r in all_records if r.get('date'))
+        dates = sorted(r["date"] for r in all_records if r.get("date"))
         print(f"  First record:              {dates[0]}")
         print(f"  Last record:               {dates[-1]}")
 
         # Word count stats
-        word_counts = [r['word_count'] for r in all_records]
-        print(f"\n  Avg words per record:      {sum(word_counts) / len(word_counts):.1f}")
+        word_counts = [r["word_count"] for r in all_records]
+        print(
+            f"\n  Avg words per record:      {sum(word_counts) / len(word_counts):.1f}"
+        )
         print(f"  Max words in a record:     {max(word_counts)}")
 
     print()
@@ -668,8 +938,9 @@ def print_stats(
 # Merge mode
 # ---------------------------------------------------------------------------
 
+
 def merge_to_csv(
-    new_records: List[Dict],
+    new_records: list[dict],
     csv_path: Path,
 ):
     """
@@ -677,23 +948,34 @@ def merge_to_csv(
     Deduplicates by prompt_hash. Reassigns sequential IDs.
     """
     existing_hashes = load_existing_hashes(csv_path)
-    existing_rows: List[Dict] = []
+    existing_rows: list[dict] = []
 
     # Read existing rows
     if csv_path.exists():
         try:
-            with open(csv_path, 'r', encoding='utf-8', newline='') as f:
+            with open(csv_path, "r", encoding="utf-8", newline="") as f:
                 reader = csv.DictReader(f)
                 for row in reader:
                     # Convert numeric fields
-                    for int_field in ['id', 'word_count', 'char_count',
-                                      'response_tokens_in', 'response_tokens_out',
-                                      'response_cache_read', 'response_cache_create',
-                                      'tool_count', 'agents_spawned']:
+                    for int_field in [
+                        "id",
+                        "word_count",
+                        "char_count",
+                        "response_tokens_in",
+                        "response_tokens_out",
+                        "response_cache_read",
+                        "response_cache_create",
+                        "tool_count",
+                        "agents_spawned",
+                    ]:
                         row[int_field] = int(row.get(int_field, 0) or 0)
-                    for float_field in ['cost_input_usd', 'cost_output_usd',
-                                        'cost_cache_read_usd', 'cost_cache_write_usd',
-                                        'cost_total_usd']:
+                    for float_field in [
+                        "cost_input_usd",
+                        "cost_output_usd",
+                        "cost_cache_read_usd",
+                        "cost_cache_write_usd",
+                        "cost_total_usd",
+                    ]:
                         row[float_field] = float(row.get(float_field, 0) or 0)
                     existing_rows.append(row)
         except Exception as e:  # noqa: BLE001
@@ -704,7 +986,7 @@ def merge_to_csv(
     added = 0
     skipped = 0
     for rec in new_records:
-        h = rec.get('prompt_hash', '')
+        h = rec.get("prompt_hash", "")
         if h in existing_hashes:
             skipped += 1
             continue
@@ -713,16 +995,17 @@ def merge_to_csv(
         added += 1
 
     # Sort all rows by timestamp
-    existing_rows.sort(key=lambda r: r.get('timestamp', ''))
+    existing_rows.sort(key=lambda r: r.get("timestamp", ""))
 
     # Reassign sequential IDs
     for i, row in enumerate(existing_rows, 1):
-        row['id'] = i
+        row["id"] = i
 
     # Write merged CSV
-    with open(csv_path, 'w', encoding='utf-8', newline='') as f:
-        writer = csv.DictWriter(f, fieldnames=CSV_COLUMNS, quoting=csv.QUOTE_MINIMAL,
-                                extrasaction='ignore')
+    with open(csv_path, "w", encoding="utf-8", newline="") as f:
+        writer = csv.DictWriter(
+            f, fieldnames=CSV_COLUMNS, quoting=csv.QUOTE_MINIMAL, extrasaction="ignore"
+        )
         writer.writeheader()
         writer.writerows(existing_rows)
 
@@ -736,9 +1019,10 @@ def merge_to_csv(
 # Main
 # ---------------------------------------------------------------------------
 
+
 def main():
     parser = argparse.ArgumentParser(
-        description='Reconstruct Claude Code session data from the gap period (Dec 15 2025 - Jan 15 2026)',
+        description="Reconstruct Claude Code session data from the gap period (Dec 15 2025 - Jan 15 2026)",
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 Examples:
@@ -748,12 +1032,17 @@ Examples:
   python reconstruct_sessions.py --merge --stats     # Merge and show stats
         """,
     )
-    parser.add_argument('--preview', action='store_true',
-                        help='Print summary of what would be reconstructed')
-    parser.add_argument('--merge', action='store_true',
-                        help='Append reconstructed entries to existing prompts.csv')
-    parser.add_argument('--stats', action='store_true',
-                        help='Show summary statistics')
+    parser.add_argument(
+        "--preview",
+        action="store_true",
+        help="Print summary of what would be reconstructed",
+    )
+    parser.add_argument(
+        "--merge",
+        action="store_true",
+        help="Append reconstructed entries to existing prompts.csv",
+    )
+    parser.add_argument("--stats", action="store_true", help="Show summary statistics")
     args = parser.parse_args()
 
     if not args.preview and not args.merge and not args.stats:
@@ -762,10 +1051,12 @@ Examples:
         sys.exit(1)
 
     script_dir = Path(__file__).parent
-    csv_path = script_dir / 'prompts.csv'
+    csv_path = script_dir / "prompts.csv"
 
-    print(f"Reconstructing sessions for gap period: "
-          f"{GAP_START.strftime('%Y-%m-%d')} to {GAP_END.strftime('%Y-%m-%d')}")
+    print(
+        f"Reconstructing sessions for gap period: "
+        f"{GAP_START.strftime('%Y-%m-%d')} to {GAP_END.strftime('%Y-%m-%d')}"
+    )
     print(f"Repo: {REPO_ROOT}")
     print()
 
@@ -794,7 +1085,7 @@ Examples:
         existing_count = 0
         if csv_path.exists():
             try:
-                with open(csv_path, 'r', encoding='utf-8') as f:
+                with open(csv_path, "r", encoding="utf-8") as f:
                     existing_count = sum(1 for _ in f) - 1  # minus header
             except Exception:  # noqa: BLE001
                 pass
@@ -802,10 +1093,14 @@ Examples:
 
     # --- Merge ---
     if args.merge:
-        print(f"\nMerging {len(all_records)} reconstructed records into {csv_path.name}...")
+        print(
+            f"\nMerging {len(all_records)} reconstructed records into {csv_path.name}..."
+        )
         merge_to_csv(all_records, csv_path)
-        print("\nDone. Reconstructed entries have conversation_file='reconstructed' for identification.")
+        print(
+            "\nDone. Reconstructed entries have conversation_file='reconstructed' for identification."
+        )
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

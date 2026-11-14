@@ -78,27 +78,47 @@ def aggregate_sessions(input_path: Path) -> list[dict]:
         date = dates[0] if dates else ""
 
         # Platform (most common)
-        platforms = [r.get("platform", "") for r in rows if r.get("platform", "").strip()]
+        platforms = [
+            r.get("platform", "") for r in rows if r.get("platform", "").strip()
+        ]
         platform = Counter(platforms).most_common(1)[0][0] if platforms else ""
 
-        results.append({
-            "session_id": hash_session_id(sid),
-            "date": date,
-            "prompt_count": len(rows),
-            "total_word_count": sum(word_counts),
-            "median_word_count": int(statistics.median(word_counts)) if word_counts else 0,
-            "category_distribution": json.dumps(dict(categories.most_common()), separators=(",", ":")),
-            "total_tokens_in": sum(safe_int(r.get("response_tokens_in")) for r in rows),
-            "total_tokens_out": sum(safe_int(r.get("response_tokens_out")) for r in rows),
-            "total_cache_read": sum(safe_int(r.get("response_cache_read")) for r in rows),
-            "total_cache_create": sum(safe_int(r.get("response_cache_create")) for r in rows),
-            "total_cost_usd": round(sum(safe_float(r.get("cost_total_usd")) for r in rows), 2),
-            "total_tool_calls": sum(safe_int(r.get("tool_count")) for r in rows),
-            "total_agents_spawned": sum(safe_int(r.get("agents_spawned")) for r in rows),
-            "agent_types_used": ",".join(sorted(agent_types_set)),
-            "model": primary_model,
-            "platform": platform,
-        })
+        results.append(
+            {
+                "session_id": hash_session_id(sid),
+                "date": date,
+                "prompt_count": len(rows),
+                "total_word_count": sum(word_counts),
+                "median_word_count": (
+                    int(statistics.median(word_counts)) if word_counts else 0
+                ),
+                "category_distribution": json.dumps(
+                    dict(categories.most_common()), separators=(",", ":")
+                ),
+                "total_tokens_in": sum(
+                    safe_int(r.get("response_tokens_in")) for r in rows
+                ),
+                "total_tokens_out": sum(
+                    safe_int(r.get("response_tokens_out")) for r in rows
+                ),
+                "total_cache_read": sum(
+                    safe_int(r.get("response_cache_read")) for r in rows
+                ),
+                "total_cache_create": sum(
+                    safe_int(r.get("response_cache_create")) for r in rows
+                ),
+                "total_cost_usd": round(
+                    sum(safe_float(r.get("cost_total_usd")) for r in rows), 2
+                ),
+                "total_tool_calls": sum(safe_int(r.get("tool_count")) for r in rows),
+                "total_agents_spawned": sum(
+                    safe_int(r.get("agents_spawned")) for r in rows
+                ),
+                "agent_types_used": ",".join(sorted(agent_types_set)),
+                "model": primary_model,
+                "platform": platform,
+            }
+        )
 
     # Sort by date
     results.sort(key=lambda r: r["date"])
@@ -150,7 +170,7 @@ def print_stats(results: list[dict]):
     for r in results:
         cats = json.loads(r["category_distribution"])
         all_cats.update(cats)
-    print(f"\nTop 10 categories:")
+    print("\nTop 10 categories:")
     for cat, count in all_cats.most_common(10):
         print(f"  {cat}: {count}")
 
@@ -163,15 +183,22 @@ def print_stats(results: list[dict]):
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Extract per-session aggregate statistics")
-    parser.add_argument("--input", type=Path,
-                        default=Path("prompts_unified.csv"),
-                        help="Path to prompts_unified.csv")
-    parser.add_argument("--output", type=Path,
-                        default=Path("samples/sessions_aggregate.csv"),
-                        help="Output CSV path")
-    parser.add_argument("--stats", action="store_true",
-                        help="Print summary statistics")
+    parser = argparse.ArgumentParser(
+        description="Extract per-session aggregate statistics"
+    )
+    parser.add_argument(
+        "--input",
+        type=Path,
+        default=Path("prompts_unified.csv"),
+        help="Path to prompts_unified.csv",
+    )
+    parser.add_argument(
+        "--output",
+        type=Path,
+        default=Path("samples/sessions_aggregate.csv"),
+        help="Output CSV path",
+    )
+    parser.add_argument("--stats", action="store_true", help="Print summary statistics")
     args = parser.parse_args()
 
     if not args.input.exists():
